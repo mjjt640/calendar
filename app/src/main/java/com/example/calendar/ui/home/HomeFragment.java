@@ -1,5 +1,6 @@
 package com.example.calendar.ui.home;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.calendar.databinding.FragmentHomeBinding;
+import com.example.calendar.ui.schedule.AddScheduleActivity;
 
 public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
@@ -34,6 +36,9 @@ public class HomeFragment extends Fragment {
 
         binding.scheduleList.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.scheduleList.setAdapter(adapter);
+        binding.addScheduleButton.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), AddScheduleActivity.class))
+        );
 
         viewModel.getScreenTitleLiveData().observe(getViewLifecycleOwner(), binding.screenTitle::setText);
         viewModel.getSampleSchedules().observe(getViewLifecycleOwner(), adapter::submitItems);

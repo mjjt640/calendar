@@ -5,4 +5,9 @@
     <string name="home_calendar_placeholder">16</string>
     <string name="home_calendar_hint">Starter home screen with a monthly hero card and today schedule preview.</string>
     <string name="home_today_section">Today</string>
+    <string name="home_add_schedule">Add schedule</string>
+    <string name="add_schedule_title">New Schedule</string>
+    <string name="add_schedule_hint">Schedule title</string>
+    <string name="add_schedule_helper">The starter form currently saves a title and uses a one-hour default time block.</string>
+    <string name="add_schedule_save">Save schedule</string>
 </resources>

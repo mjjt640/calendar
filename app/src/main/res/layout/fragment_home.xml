@@ -14,6 +14,14 @@
         android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
         android:textColor="@color/text_primary" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/add_schedule_button"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_medium"
+        android:text="@string/home_add_schedule" />
+
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
