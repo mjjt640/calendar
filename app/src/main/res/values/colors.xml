@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="surface">#F4F1EA</color>
+    <color name="surface_dark">#171717</color>
+    <color name="text_primary">#1F1A17</color>
+    <color name="text_primary_dark">#F4EFEA</color>
+    <color name="calendar_hero">#C75D2C</color>
+    <color name="calendar_hero_on">#FFF7F0</color>
+    <color name="card_background">#FFFDF8</color>
+    <color name="card_background_dark">#25211F</color>
+    <color name="card_stroke">#E2D7CA</color>
+    <color name="card_stroke_dark">#463C36</color>
+    <color name="accent_dot">#D94436</color>
+</resources>

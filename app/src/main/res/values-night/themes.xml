@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Calendar" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/calendar_hero</item>
+        <item name="android:colorBackground">@color/surface_dark</item>
+    </style>
+</resources>

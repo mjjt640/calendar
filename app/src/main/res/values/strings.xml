@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Calendar</string>
+    <string name="home_month_label">April Focus</string>
+    <string name="home_calendar_placeholder">16</string>
+    <string name="home_calendar_hint">Starter home screen with a monthly hero card and today schedule preview.</string>
+    <string name="home_today_section">Today</string>
+</resources>
