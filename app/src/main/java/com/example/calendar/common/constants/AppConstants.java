@@ -2,6 +2,7 @@ package com.example.calendar.common.constants;
 
 public final class AppConstants {
     public static final String HOME_TAG = "home_fragment";
+    public static final String USER_TAG = "user_fragment";
 
     public static final String PREFS_AUTH = "calendar_auth";
     public static final String KEY_ACCESS_TOKEN = "access_token";

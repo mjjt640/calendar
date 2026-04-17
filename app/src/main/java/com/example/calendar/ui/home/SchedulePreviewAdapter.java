@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -23,12 +24,13 @@ import java.util.List;
 import java.util.Locale;
 
 public class SchedulePreviewAdapter extends RecyclerView.Adapter<SchedulePreviewAdapter.ViewHolder> {
+    private static final long DRAG_START_DELAY_MS = 200L;
+    private static final long SORT_STEP_DELAY_MS = 110L;
+
     public interface Callbacks {
         void onStartDrag(RecyclerView.ViewHolder holder);
         void onLongPress(Schedule schedule, View anchor);
     }
-
-    private static final long SORT_STEP_DELAY_MS = 110L;
 
     private final List<Schedule> items = new ArrayList<>();
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.CHINA);
@@ -83,6 +85,12 @@ public class SchedulePreviewAdapter extends RecyclerView.Adapter<SchedulePreview
         return items.size();
     }
 
+    @Override
+    public void onViewRecycled(@NonNull ViewHolder holder) {
+        holder.cancelPendingDrag();
+        super.onViewRecycled(holder);
+    }
+
     private void animateSortStep(List<Schedule> targetItems, int targetIndex, Runnable onComplete) {
         if (targetIndex >= targetItems.size()) {
             onComplete.run();
@@ -119,30 +127,70 @@ public class SchedulePreviewAdapter extends RecyclerView.Adapter<SchedulePreview
 
     class ViewHolder extends RecyclerView.ViewHolder {
         private final ItemTodayScheduleBinding binding;
+        private final Runnable delayedDragStarter;
+        private float downX;
+        private float downY;
+        private boolean dragScheduled;
 
         ViewHolder(ItemTodayScheduleBinding binding) {
             super(binding.getRoot());
             this.binding = binding;
+            this.delayedDragStarter = () -> {
+                dragScheduled = false;
+                this.binding.dragHandle.setPressed(false);
+                callbacks.onStartDrag(this);
+            };
         }
 
         void bind(Schedule schedule) {
+            cancelPendingDrag();
             binding.scheduleTitle.setText(schedule.getTitle());
             binding.scheduleMeta.setText(R.string.home_schedule_meta);
             binding.scheduleTime.setText(timeFormat.format(new Date(schedule.getStartTime())));
             binding.priorityDot.setBackgroundTintList(
                     ColorStateList.valueOf(resolvePriorityColor(schedule.getPriority()))
             );
-            binding.dragHandle.setOnTouchListener((v, event) -> {
-                if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-                    callbacks.onStartDrag(this);
-                    return true;
-                }
-                return false;
-            });
+            binding.dragHandle.setOnTouchListener((v, event) -> handleDragHandleTouch(event));
             binding.getRoot().setOnLongClickListener(v -> {
                 callbacks.onLongPress(schedule, binding.getRoot());
                 return true;
             });
+        }
+
+        private boolean handleDragHandleTouch(MotionEvent event) {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    downX = event.getRawX();
+                    downY = event.getRawY();
+                    dragScheduled = true;
+                    binding.dragHandle.setPressed(true);
+                    mainHandler.removeCallbacks(delayedDragStarter);
+                    mainHandler.postDelayed(delayedDragStarter, DRAG_START_DELAY_MS);
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    if (dragScheduled && movedBeyondTouchSlop(event)) {
+                        cancelPendingDrag();
+                    }
+                    return true;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    cancelPendingDrag();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private boolean movedBeyondTouchSlop(MotionEvent event) {
+            int touchSlop = ViewConfiguration.get(binding.getRoot().getContext()).getScaledTouchSlop();
+            return Math.abs(event.getRawX() - downX) > touchSlop
+                    || Math.abs(event.getRawY() - downY) > touchSlop;
+        }
+
+        void cancelPendingDrag() {
+            dragScheduled = false;
+            binding.dragHandle.setPressed(false);
+            mainHandler.removeCallbacks(delayedDragStarter);
         }
 
         private int resolvePriorityColor(String priority) {

@@ -4,10 +4,13 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.calendar.databinding.ActivityLoginBinding;
@@ -30,6 +33,10 @@ public class LoginActivity extends AppCompatActivity {
         runEntranceAnimation();
         startFloatingAnimation(binding.glowOrbLarge, 0f, -24f, 4200L);
         startFloatingAnimation(binding.glowOrbSmall, 0f, 18f, 3600L);
+        startFloatingAnimation(binding.glowOrbMid, 0f, -14f, 3900L);
+        startButtonAnimations();
+        bindInputFocusAnimations();
+        bindButtonTouchFeedback();
 
         binding.loginButton.setOnClickListener(v -> viewModel.login(
                 textOf(binding.accountInput.getText()),
@@ -90,6 +97,65 @@ public class LoginActivity extends AppCompatActivity {
         animator.setRepeatMode(ValueAnimator.REVERSE);
         animator.setInterpolator(new AccelerateDecelerateInterpolator());
         animator.start();
+    }
+
+    private void startButtonAnimations() {
+        ObjectAnimator glowScaleX = ObjectAnimator.ofFloat(binding.loginButtonGlow, View.SCALE_X, 0.96f, 1.04f);
+        glowScaleX.setDuration(1800L);
+        glowScaleX.setRepeatCount(ValueAnimator.INFINITE);
+        glowScaleX.setRepeatMode(ValueAnimator.REVERSE);
+        glowScaleX.setInterpolator(new AccelerateDecelerateInterpolator());
+        glowScaleX.start();
+
+        ObjectAnimator glowScaleY = ObjectAnimator.ofFloat(binding.loginButtonGlow, View.SCALE_Y, 0.92f, 1.08f);
+        glowScaleY.setDuration(1800L);
+        glowScaleY.setRepeatCount(ValueAnimator.INFINITE);
+        glowScaleY.setRepeatMode(ValueAnimator.REVERSE);
+        glowScaleY.setInterpolator(new AccelerateDecelerateInterpolator());
+        glowScaleY.start();
+
+        ObjectAnimator shimmer = ObjectAnimator.ofFloat(binding.loginButtonShimmer, View.TRANSLATION_X, 0f, 520f);
+        shimmer.setDuration(1850L);
+        shimmer.setRepeatCount(ValueAnimator.INFINITE);
+        shimmer.setRepeatMode(ValueAnimator.RESTART);
+        shimmer.setInterpolator(new DecelerateInterpolator());
+        shimmer.start();
+    }
+
+    private void bindInputFocusAnimations() {
+        binding.accountInput.setOnFocusChangeListener((v, hasFocus) -> animateFieldFocus(binding.accountLayout, hasFocus));
+        binding.passwordInput.setOnFocusChangeListener((v, hasFocus) -> animateFieldFocus(binding.passwordLayout, hasFocus));
+    }
+
+    private void animateFieldFocus(View target, boolean focused) {
+        target.animate()
+                .translationY(focused ? -3f : 0f)
+                .alpha(focused ? 1f : 0.98f)
+                .setDuration(220L)
+                .setInterpolator(new AccelerateDecelerateInterpolator())
+                .start();
+        ViewCompat.setElevation(target, focused ? 10f : 0f);
+    }
+
+    private void bindButtonTouchFeedback() {
+        binding.loginButton.setOnTouchListener((v, event) -> {
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                binding.loginButtonShell.animate()
+                        .scaleX(0.985f)
+                        .scaleY(0.985f)
+                        .setDuration(110L)
+                        .start();
+            } else if (event.getActionMasked() == MotionEvent.ACTION_UP
+                    || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                binding.loginButtonShell.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(160L)
+                        .setInterpolator(new AccelerateDecelerateInterpolator())
+                        .start();
+            }
+            return false;
+        });
     }
 
     private String textOf(android.text.Editable editable) {

@@ -70,4 +70,9 @@ public class LocalProfileRepository implements ProfileRepository {
                 false
         );
     }
+
+    @Override
+    public void clearProfile() {
+        preferences.edit().clear().apply();
+    }
 }

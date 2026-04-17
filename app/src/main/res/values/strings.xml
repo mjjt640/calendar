@@ -63,4 +63,15 @@
     <string name="profile_signature_hint">个性签名</string>
     <string name="profile_complete_button">完成并进入日程</string>
     <string name="profile_skip_button">跳过，先进入首页</string>
+    <string name="nav_home">首页</string>
+    <string name="nav_user">我的</string>
+    <string name="user_header_chip">个人中心</string>
+    <string name="user_avatar_placeholder">我</string>
+    <string name="user_section_title">常用功能</string>
+    <string name="user_item_account_security">账号与安全</string>
+    <string name="user_item_edit_profile">资料编辑</string>
+    <string name="user_item_notifications">消息通知</string>
+    <string name="user_item_help">帮助与反馈</string>
+    <string name="user_item_about">关于我们</string>
+    <string name="user_logout">退出登录</string>
 </resources>

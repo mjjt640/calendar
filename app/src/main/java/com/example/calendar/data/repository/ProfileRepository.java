@@ -8,4 +8,6 @@ public interface ProfileRepository {
     void saveProfile(UserProfile userProfile);
 
     UserProfile createSkippedProfile(String account);
+
+    void clearProfile();
 }
