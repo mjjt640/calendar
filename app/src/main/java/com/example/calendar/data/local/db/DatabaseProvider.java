@@ -18,7 +18,9 @@ public final class DatabaseProvider {
                             context.getApplicationContext(),
                             AppDatabase.class,
                             "calendar.db"
-                    ).build();
+                    ).fallbackToDestructiveMigration()
+                            .allowMainThreadQueries()
+                            .build();
                 }
             }
         }

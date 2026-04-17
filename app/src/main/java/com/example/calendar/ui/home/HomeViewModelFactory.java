@@ -1,4 +1,6 @@
-package com.example.calendar.ui.schedule;
+package com.example.calendar.ui.home;
+
+import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
@@ -7,10 +9,10 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.calendar.data.local.db.DatabaseProvider;
 import com.example.calendar.data.repository.LocalScheduleRepository;
 
-public class AddScheduleViewModelFactory implements ViewModelProvider.Factory {
-    private final android.content.Context context;
+public class HomeViewModelFactory implements ViewModelProvider.Factory {
+    private final Context context;
 
-    public AddScheduleViewModelFactory(android.content.Context context) {
+    public HomeViewModelFactory(Context context) {
         this.context = context.getApplicationContext();
     }
 
@@ -18,9 +20,8 @@ public class AddScheduleViewModelFactory implements ViewModelProvider.Factory {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
-        LocalScheduleRepository repository = new LocalScheduleRepository(
-                DatabaseProvider.getInstance(context).scheduleDao()
+        return (T) new HomeViewModel(
+                new LocalScheduleRepository(DatabaseProvider.getInstance(context).scheduleDao())
         );
-        return (T) new AddScheduleViewModel(repository);
     }
 }

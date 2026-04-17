@@ -16,31 +16,85 @@ public class LocalScheduleRepository implements ScheduleRepository {
 
     @Override
     public long addSchedule(Schedule schedule) {
-        ScheduleEntity entity = ScheduleEntity.createDraft(
+        int nextSortOrder = scheduleDao.countAll() + 1;
+        ScheduleEntity entity = ScheduleEntity.fromDomain(
+                0L,
                 schedule.getTitle(),
                 schedule.getStartTime(),
-                schedule.getEndTime()
+                schedule.getEndTime(),
+                schedule.getPriority(),
+                nextSortOrder,
+                false
         );
         return scheduleDao.insert(entity);
     }
 
     @Override
     public List<Schedule> getOpenSchedules() {
-        List<ScheduleEntity> schedules = scheduleDao.getOpenSchedules();
+        return mapSchedules(scheduleDao.getOpenSchedules());
+    }
+
+    @Override
+    public List<Schedule> getSchedulesOrderedByTime() {
+        return mapSchedules(scheduleDao.getOpenSchedulesByTime());
+    }
+
+    @Override
+    public Schedule getScheduleById(long id) {
+        ScheduleEntity entity = scheduleDao.getById(id);
+        return entity == null ? null : mapSchedule(entity);
+    }
+
+    @Override
+    public int getScheduleCount() {
+        return scheduleDao.countAll();
+    }
+
+    @Override
+    public void updateSchedule(Schedule schedule) {
+        scheduleDao.update(ScheduleEntity.fromDomain(
+                schedule.getId(),
+                schedule.getTitle(),
+                schedule.getStartTime(),
+                schedule.getEndTime(),
+                schedule.getPriority(),
+                schedule.getSortOrder(),
+                false
+        ));
+    }
+
+    @Override
+    public void deleteSchedule(long id) {
+        ScheduleEntity entity = scheduleDao.getById(id);
+        if (entity != null) {
+            scheduleDao.delete(entity);
+        }
+    }
+
+    @Override
+    public void updateManualOrder(List<Schedule> schedules) {
+        for (int index = 0; index < schedules.size(); index++) {
+            Schedule schedule = schedules.get(index).copyWithSortOrder(index + 1);
+            updateSchedule(schedule);
+        }
+    }
+
+    private List<Schedule> mapSchedules(List<ScheduleEntity> entities) {
         List<Schedule> result = new ArrayList<>();
-        for (ScheduleEntity schedule : schedules) {
-            result.add(new Schedule(schedule.title, schedule.startTime, schedule.endTime));
+        for (ScheduleEntity entity : entities) {
+            result.add(mapSchedule(entity));
         }
         return result;
     }
 
-    @Override
-    public List<String> getTodaySchedulePreview() {
-        List<Schedule> schedules = getOpenSchedules();
-        List<String> preview = new ArrayList<>();
-        for (Schedule schedule : schedules) {
-            preview.add(schedule.getTitle());
-        }
-        return preview;
+    private Schedule mapSchedule(ScheduleEntity entity) {
+        return new Schedule(
+                entity.id,
+                entity.title,
+                entity.startTime,
+                entity.endTime,
+                entity.priority,
+                entity.sortOrder
+        );
     }
 }

@@ -39,12 +39,30 @@ public class AddScheduleUseCaseTest {
         }
 
         @Override
-        public List<String> getTodaySchedulePreview() {
-            List<String> preview = new ArrayList<>();
-            for (Schedule schedule : savedSchedules) {
-                preview.add(schedule.getTitle());
-            }
-            return preview;
+        public List<Schedule> getSchedulesOrderedByTime() {
+            return new ArrayList<>(savedSchedules);
+        }
+
+        @Override
+        public Schedule getScheduleById(long id) {
+            return null;
+        }
+
+        @Override
+        public int getScheduleCount() {
+            return savedSchedules.size();
+        }
+
+        @Override
+        public void updateSchedule(Schedule schedule) {
+        }
+
+        @Override
+        public void deleteSchedule(long id) {
+        }
+
+        @Override
+        public void updateManualOrder(List<Schedule> schedules) {
         }
     }
 }

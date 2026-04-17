@@ -2,8 +2,8 @@ package com.example.calendar.ui.schedule;
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 
+import com.example.calendar.data.repository.ScheduleRepository;
 import com.example.calendar.domain.model.Schedule;
-import com.example.calendar.domain.usecase.AddScheduleUseCase;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -22,40 +22,124 @@ public class AddScheduleViewModelTest {
 
     @Test
     public void saveSchedule_withValidInput_marksSuccess() {
-        FakeAddScheduleUseCase useCase = new FakeAddScheduleUseCase();
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(useCase);
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(
+                repository,
+                1713261600000L,
+                1713265200000L
+        );
 
-        viewModel.saveSchedule("Team sync", 1713261600000L, 1713265200000L);
+        viewModel.saveSchedule("Team sync");
 
         assertTrue(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
         assertNull(viewModel.getValidationMessage().getValue());
-        assertEquals(1, useCase.savedSchedules.size());
-        assertEquals("Team sync", useCase.savedSchedules.get(0).getTitle());
+        assertEquals(1, repository.savedSchedules.size());
+        assertEquals("Team sync", repository.savedSchedules.get(0).getTitle());
     }
 
     @Test
     public void saveSchedule_withBlankTitle_setsValidationError() {
-        FakeAddScheduleUseCase useCase = new FakeAddScheduleUseCase();
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(useCase);
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(
+                repository,
+                1713261600000L,
+                1713265200000L
+        );
 
-        viewModel.saveSchedule("   ", 1713261600000L, 1713265200000L);
+        viewModel.saveSchedule("   ");
 
-        assertEquals("Title is required", viewModel.getValidationMessage().getValue());
+        assertEquals("请输入日程标题", viewModel.getValidationMessage().getValue());
         assertFalse(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
-        assertEquals(0, useCase.savedSchedules.size());
+        assertEquals(0, repository.savedSchedules.size());
     }
 
-    private static class FakeAddScheduleUseCase extends AddScheduleUseCase {
+    @Test
+    public void init_formatsChineseTimeLabels() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(
+                repository,
+                1713261600000L,
+                1713265200000L
+        );
+
+        assertEquals("2024年4月16日 18:00", viewModel.getStartTimeText().getValue());
+        assertEquals("2024年4月16日 19:00", viewModel.getEndTimeText().getValue());
+    }
+
+    @Test
+    public void updateStartTime_refreshesDisplayedLabel() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(
+                repository,
+                1713261600000L,
+                1713265200000L
+        );
+
+        viewModel.updateStartTime(1713349800000L);
+
+        assertEquals("2024年4月17日 18:30", viewModel.getStartTimeText().getValue());
+    }
+
+    @Test
+    public void saveSchedule_withEndBeforeStart_setsValidationError() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(
+                repository,
+                1713265200000L,
+                1713261600000L
+        );
+
+        viewModel.saveSchedule("Team sync");
+
+        assertEquals("结束时间不能早于开始时间", viewModel.getValidationMessage().getValue());
+        assertFalse(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
+        assertEquals(0, repository.savedSchedules.size());
+    }
+
+    private static class FakeScheduleRepository implements ScheduleRepository {
         private final List<Schedule> savedSchedules = new ArrayList<>();
 
-        FakeAddScheduleUseCase() {
-            super(null);
+        @Override
+        public long addSchedule(Schedule schedule) {
+            savedSchedules.add(schedule);
+            return savedSchedules.size();
         }
 
         @Override
-        public long invoke(Schedule schedule) {
-            savedSchedules.add(schedule);
+        public List<Schedule> getOpenSchedules() {
+            return new ArrayList<>(savedSchedules);
+        }
+
+        @Override
+        public List<Schedule> getSchedulesOrderedByTime() {
+            return new ArrayList<>(savedSchedules);
+        }
+
+        @Override
+        public Schedule getScheduleById(long id) {
+            for (Schedule schedule : savedSchedules) {
+                if (schedule.getId() == id) {
+                    return schedule;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public int getScheduleCount() {
             return savedSchedules.size();
+        }
+
+        @Override
+        public void updateSchedule(Schedule schedule) {
+        }
+
+        @Override
+        public void deleteSchedule(long id) {
+        }
+
+        @Override
+        public void updateManualOrder(List<Schedule> schedules) {
         }
     }
 }

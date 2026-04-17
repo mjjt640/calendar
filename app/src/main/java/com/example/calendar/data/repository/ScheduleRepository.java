@@ -9,5 +9,15 @@ public interface ScheduleRepository {
 
     List<Schedule> getOpenSchedules();
 
-    List<String> getTodaySchedulePreview();
+    List<Schedule> getSchedulesOrderedByTime();
+
+    Schedule getScheduleById(long id);
+
+    int getScheduleCount();
+
+    void updateSchedule(Schedule schedule);
+
+    void deleteSchedule(long id);
+
+    void updateManualOrder(List<Schedule> schedules);
 }
