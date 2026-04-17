@@ -43,4 +43,24 @@
     <string name="schedule_updated">日程已更新</string>
     <string name="dialog_confirm">确定</string>
     <string name="dialog_cancel">取消</string>
+    <string name="login_header_chip">欢迎回来</string>
+    <string name="login_title">把今天的安排重新握在手里</string>
+    <string name="login_subtitle">先登录账号，再继续记录日程、整理节奏，也为后续绑定手机号预留入口。</string>
+    <string name="login_form_title">账号登录</string>
+    <string name="login_form_subtitle">当前使用账号和密码登录，后续可继续扩展手机号绑定。</string>
+    <string name="login_account_hint">请输入账号</string>
+    <string name="login_password_hint">请输入密码</string>
+    <string name="login_button">登录并继续</string>
+    <string name="login_forgot">忘记密码</string>
+    <string name="login_register">注册账号</string>
+    <string name="profile_header_chip">资料补充</string>
+    <string name="profile_title">再完善一点资料，使用会更顺手</string>
+    <string name="profile_subtitle">你可以现在填写，也可以先跳过。跳过后系统会自动生成默认昵称和签名。</string>
+    <string name="profile_nickname_hint">昵称</string>
+    <string name="profile_gender_hint">性别</string>
+    <string name="profile_birthday_hint">生日</string>
+    <string name="profile_city_hint">城市</string>
+    <string name="profile_signature_hint">个性签名</string>
+    <string name="profile_complete_button">完成并进入日程</string>
+    <string name="profile_skip_button">跳过，先进入首页</string>
 </resources>

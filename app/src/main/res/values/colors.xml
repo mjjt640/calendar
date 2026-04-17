@@ -18,4 +18,6 @@
     <color name="priority_low">#48A868</color>
     <color name="badge_background">#F7E5DA</color>
     <color name="panel_background">#F3E7DA</color>
+    <color name="login_hero_start">#F6D1B2</color>
+    <color name="login_hero_end">#F1A66A</color>
 </resources>

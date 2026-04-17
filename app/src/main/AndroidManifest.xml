@@ -18,7 +18,22 @@
             android:theme="@style/Theme.Calendar" />
 
         <activity
+            android:name=".ui.profile.ProfileSetupActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Calendar" />
+
+        <activity
+            android:name=".ui.auth.LoginActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Calendar" />
+
+        <activity
             android:name=".ui.MainActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Calendar" />
+
+        <activity
+            android:name=".ui.launcher.LauncherActivity"
             android:exported="true"
             android:theme="@style/Theme.Calendar">
             <intent-filter>
