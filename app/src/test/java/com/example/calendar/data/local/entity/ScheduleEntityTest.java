@@ -13,6 +13,8 @@ public class ScheduleEntityTest {
 
         assertEquals("Project review", entity.title);
         assertEquals("中", entity.priority);
+        assertEquals("", entity.location);
+        assertEquals("", entity.note);
         assertFalse(entity.completed);
     }
 }

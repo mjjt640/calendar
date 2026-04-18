@@ -29,7 +29,9 @@ public class LocalScheduleRepository implements ScheduleRepository {
                 schedule.getEndTime(),
                 schedule.getPriority(),
                 nextSortOrder,
-                false
+                false,
+                schedule.getLocation(),
+                schedule.getNote()
         );
         return scheduleDao.insert(entity);
     }
@@ -81,7 +83,9 @@ public class LocalScheduleRepository implements ScheduleRepository {
                 schedule.getEndTime(),
                 schedule.getPriority(),
                 schedule.getSortOrder(),
-                false
+                false,
+                schedule.getLocation(),
+                schedule.getNote()
         ));
     }
 
@@ -116,7 +120,9 @@ public class LocalScheduleRepository implements ScheduleRepository {
                 entity.startTime,
                 entity.endTime,
                 entity.priority,
-                entity.sortOrder
+                entity.sortOrder,
+                entity.location,
+                entity.note
         );
     }
 }

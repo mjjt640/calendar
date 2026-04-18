@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="add_schedule_hero_title">把今天的安排先定下来</string>
+    <string name="add_schedule_hero_stat_primary_title">录入更顺手</string>
+    <string name="add_schedule_hero_stat_primary_value">标题、地点、备注一屏填完</string>
+    <string name="add_schedule_hero_stat_secondary_title">本地保存</string>
+    <string name="add_schedule_hero_stat_secondary_value">断网也能继续安排今天</string>
+    <string name="add_schedule_basic_tip">先填核心信息</string>
+    <string name="add_schedule_priority_tip">一眼分清轻重缓急</string>
+    <string name="add_schedule_time_tip">再安排时间更顺手</string>
+    <string name="add_schedule_bottom_hint">保存后可继续补充提醒、重复和更多细节</string>
+    <string name="add_schedule_location_hint">地点</string>
+    <string name="add_schedule_note_hint">备注</string>
+    <string name="home_schedule_location_empty">未设置地点</string>
+</resources>

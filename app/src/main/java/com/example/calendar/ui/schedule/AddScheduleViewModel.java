@@ -15,17 +15,25 @@ public class AddScheduleViewModel extends ViewModel {
     private static final ZoneId APP_ZONE = ZoneId.of("Asia/Shanghai");
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy年M月d日 HH:mm").withZone(APP_ZONE);
+    private static final String PAGE_TITLE_CREATE = "新建日程";
+    private static final String PAGE_TITLE_EDIT = "编辑日程";
+    private static final String SAVE_BUTTON_CREATE = "保存日程";
+    private static final String SAVE_BUTTON_EDIT = "保存修改";
+    private static final String ERROR_TITLE_REQUIRED = "请输入日程标题";
+    private static final String ERROR_INVALID_TIME = "结束时间不能早于开始时间";
 
     private final ScheduleRepository scheduleRepository;
     private final MutableLiveData<String> validationMessage = new MutableLiveData<>();
     private final MutableLiveData<Boolean> savedState = new MutableLiveData<>(false);
     private final MutableLiveData<String> startTimeText = new MutableLiveData<>();
     private final MutableLiveData<String> endTimeText = new MutableLiveData<>();
-    private final MutableLiveData<String> pageTitle = new MutableLiveData<>("新建日程");
-    private final MutableLiveData<String> saveButtonText = new MutableLiveData<>("保存日程");
+    private final MutableLiveData<String> pageTitle = new MutableLiveData<>(PAGE_TITLE_CREATE);
+    private final MutableLiveData<String> saveButtonText = new MutableLiveData<>(SAVE_BUTTON_CREATE);
     private final MutableLiveData<Boolean> showDeleteAction = new MutableLiveData<>(false);
-    private final MutableLiveData<String> priority = new MutableLiveData<>("中");
+    private final MutableLiveData<String> priority = new MutableLiveData<>(Schedule.PRIORITY_MEDIUM);
     private final MutableLiveData<String> titleText = new MutableLiveData<>("");
+    private final MutableLiveData<String> locationText = new MutableLiveData<>("");
+    private final MutableLiveData<String> noteText = new MutableLiveData<>("");
     private long scheduleId;
     private long startTime;
     private long endTime;
@@ -79,6 +87,14 @@ public class AddScheduleViewModel extends ViewModel {
         return titleText;
     }
 
+    public LiveData<String> getLocationText() {
+        return locationText;
+    }
+
+    public LiveData<String> getNoteText() {
+        return noteText;
+    }
+
     public long getStartTime() {
         return startTime;
     }
@@ -97,11 +113,13 @@ public class AddScheduleViewModel extends ViewModel {
         endTime = schedule.getEndTime();
         sortOrder = schedule.getSortOrder();
         titleText.setValue(schedule.getTitle());
+        locationText.setValue(schedule.getLocation());
+        noteText.setValue(schedule.getNote());
         priority.setValue(schedule.getPriority());
         startTimeText.setValue(formatTime(startTime));
         endTimeText.setValue(formatTime(endTime));
-        pageTitle.setValue("编辑日程");
-        saveButtonText.setValue("保存修改");
+        pageTitle.setValue(PAGE_TITLE_EDIT);
+        saveButtonText.setValue(SAVE_BUTTON_EDIT);
         showDeleteAction.setValue(true);
     }
 
@@ -120,28 +138,51 @@ public class AddScheduleViewModel extends ViewModel {
     }
 
     public void saveSchedule(String title) {
+        saveSchedule(title, "", "");
+    }
+
+    public void saveSchedule(String title, String location, String note) {
         if (title == null || title.trim().isEmpty()) {
-            validationMessage.setValue("请输入日程标题");
+            validationMessage.setValue(ERROR_TITLE_REQUIRED);
             savedState.setValue(false);
             return;
         }
         if (endTime < startTime) {
-            validationMessage.setValue("结束时间不能早于开始时间");
+            validationMessage.setValue(ERROR_INVALID_TIME);
             savedState.setValue(false);
             return;
         }
 
         String trimmedTitle = title.trim();
-        String finalPriority = priority.getValue() == null ? "中" : priority.getValue();
+        String trimmedLocation = sanitizeOptionalText(location);
+        String trimmedNote = sanitizeOptionalText(note);
+        String finalPriority = priority.getValue() == null ? Schedule.PRIORITY_MEDIUM : priority.getValue();
         if (scheduleId == 0L) {
-            scheduleRepository.addSchedule(new Schedule(trimmedTitle, startTime, endTime)
-                    .copyForUpdate(trimmedTitle, startTime, endTime, finalPriority));
+            scheduleRepository.addSchedule(new Schedule(
+                    0L,
+                    trimmedTitle,
+                    startTime,
+                    endTime,
+                    finalPriority,
+                    0,
+                    trimmedLocation,
+                    trimmedNote
+            ));
         } else {
-            scheduleRepository.updateSchedule(
-                    new Schedule(scheduleId, trimmedTitle, startTime, endTime, finalPriority, sortOrder)
-            );
+            scheduleRepository.updateSchedule(new Schedule(
+                    scheduleId,
+                    trimmedTitle,
+                    startTime,
+                    endTime,
+                    finalPriority,
+                    sortOrder,
+                    trimmedLocation,
+                    trimmedNote
+            ));
         }
         titleText.setValue(trimmedTitle);
+        locationText.setValue(trimmedLocation);
+        noteText.setValue(trimmedNote);
         validationMessage.setValue(null);
         savedState.setValue(true);
     }
@@ -151,6 +192,10 @@ public class AddScheduleViewModel extends ViewModel {
             scheduleRepository.deleteSchedule(scheduleId);
             savedState.setValue(true);
         }
+    }
+
+    private String sanitizeOptionalText(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private String formatTime(long timeMillis) {

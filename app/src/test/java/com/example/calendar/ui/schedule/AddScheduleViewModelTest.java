@@ -32,12 +32,14 @@ public class AddScheduleViewModelTest {
                 1713265200000L
         );
 
-        viewModel.saveSchedule("Team sync");
+        viewModel.saveSchedule("Team sync", "会议室 A", "带上周报");
 
         assertTrue(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
         assertNull(viewModel.getValidationMessage().getValue());
         assertEquals(1, repository.savedSchedules.size());
         assertEquals("Team sync", repository.savedSchedules.get(0).getTitle());
+        assertEquals("会议室 A", repository.savedSchedules.get(0).getLocation());
+        assertEquals("带上周报", repository.savedSchedules.get(0).getNote());
     }
 
     @Test
@@ -49,7 +51,7 @@ public class AddScheduleViewModelTest {
                 1713265200000L
         );
 
-        viewModel.saveSchedule("   ");
+        viewModel.saveSchedule("   ", "会议室 A", "带上周报");
 
         assertEquals("请输入日程标题", viewModel.getValidationMessage().getValue());
         assertFalse(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
@@ -92,11 +94,38 @@ public class AddScheduleViewModelTest {
                 1713261600000L
         );
 
-        viewModel.saveSchedule("Team sync");
+        viewModel.saveSchedule("Team sync", "会议室 A", "带上周报");
 
         assertEquals("结束时间不能早于开始时间", viewModel.getValidationMessage().getValue());
         assertFalse(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
         assertEquals(0, repository.savedSchedules.size());
+    }
+
+    @Test
+    public void loadSchedule_withLocationAndNote_populatesFormState() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        repository.savedSchedules.add(new Schedule(
+                9L,
+                "客户沟通",
+                1713261600000L,
+                1713265200000L,
+                "高",
+                3,
+                "线上会议",
+                "确认排期"
+        ));
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(
+                repository,
+                1713261600000L,
+                1713265200000L
+        );
+
+        viewModel.loadSchedule(9L);
+
+        assertEquals("客户沟通", viewModel.getTitleText().getValue());
+        assertEquals("线上会议", viewModel.getLocationText().getValue());
+        assertEquals("确认排期", viewModel.getNoteText().getValue());
+        assertEquals("高", viewModel.getPriority().getValue());
     }
 
     private static class FakeScheduleRepository implements ScheduleRepository {

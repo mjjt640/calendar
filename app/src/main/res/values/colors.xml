@@ -28,4 +28,11 @@
     <color name="panel_background">#F3E7DA</color>
     <color name="login_hero_start">#F6D1B2</color>
     <color name="login_hero_end">#F1A66A</color>
+    <color name="add_schedule_hero_start">#FFF3E6</color>
+    <color name="add_schedule_hero_end">#FFD7BA</color>
+    <color name="add_schedule_hero_accent">#FFE8D6</color>
+    <color name="add_schedule_panel_fill">#FFFDF9</color>
+    <color name="add_schedule_field_fill">#FFF9F3</color>
+    <color name="add_schedule_bottom_fill">#FFF8F0</color>
+    <color name="add_schedule_shadow">#1AC85B32</color>
 </resources>

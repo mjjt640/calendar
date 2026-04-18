@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ShapeAppearance.Calendar.AddScheduleField" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">18dp</item>
+    </style>
+
+    <style name="Widget.Calendar.AddScheduleInput" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@color/add_schedule_field_fill</item>
+        <item name="boxStrokeColor">@color/card_stroke</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="hintTextColor">@color/text_secondary</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Calendar.AddScheduleField</item>
+    </style>
+
+    <style name="Widget.Calendar.AddScheduleDropdown" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="boxBackgroundColor">@color/add_schedule_field_fill</item>
+        <item name="boxStrokeColor">@color/card_stroke</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="hintTextColor">@color/text_secondary</item>
+        <item name="endIconTint">@color/text_secondary</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Calendar.AddScheduleField</item>
+    </style>
+</resources>

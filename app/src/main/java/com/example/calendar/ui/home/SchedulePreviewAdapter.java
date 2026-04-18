@@ -145,7 +145,7 @@ public class SchedulePreviewAdapter extends RecyclerView.Adapter<SchedulePreview
         void bind(Schedule schedule) {
             cancelPendingDrag();
             binding.scheduleTitle.setText(schedule.getTitle());
-            binding.scheduleMeta.setText(R.string.home_schedule_meta);
+            binding.scheduleMeta.setText(resolveMetaText(schedule));
             binding.scheduleTime.setText(timeFormat.format(new Date(schedule.getStartTime())));
             binding.priorityDot.setBackgroundTintList(
                     ColorStateList.valueOf(resolvePriorityColor(schedule.getPriority()))
@@ -155,6 +155,14 @@ public class SchedulePreviewAdapter extends RecyclerView.Adapter<SchedulePreview
                 callbacks.onLongPress(schedule, binding.getRoot());
                 return true;
             });
+        }
+
+        private CharSequence resolveMetaText(Schedule schedule) {
+            String location = schedule.getLocation();
+            if (location == null || location.trim().isEmpty()) {
+                return binding.getRoot().getContext().getString(R.string.home_schedule_location_empty);
+            }
+            return location;
         }
 
         private boolean handleDragHandleTouch(MotionEvent event) {
@@ -194,10 +202,10 @@ public class SchedulePreviewAdapter extends RecyclerView.Adapter<SchedulePreview
         }
 
         private int resolvePriorityColor(String priority) {
-            if ("高".equals(priority)) {
+            if (Schedule.PRIORITY_HIGH.equals(priority)) {
                 return ContextCompat.getColor(binding.getRoot().getContext(), R.color.priority_high);
             }
-            if ("低".equals(priority)) {
+            if (Schedule.PRIORITY_LOW.equals(priority)) {
                 return ContextCompat.getColor(binding.getRoot().getContext(), R.color.priority_low);
             }
             return ContextCompat.getColor(binding.getRoot().getContext(), R.color.priority_medium);

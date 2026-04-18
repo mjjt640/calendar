@@ -3,54 +3,145 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface"
+    android:background="@drawable/bg_add_schedule_page"
     android:orientation="vertical">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/surface"
-        android:paddingHorizontal="@dimen/spacing_small"
-        app:navigationIcon="@android:drawable/ic_menu_revert"
-        app:title="@string/add_schedule_title" />
+        android:background="@android:color/transparent"
+        android:paddingHorizontal="@dimen/spacing_medium"
+        android:paddingTop="@dimen/spacing_small"
+        app:navigationIcon="@drawable/ic_calendar_chevron_left"
+        app:navigationIconTint="@color/text_secondary"
+        app:title="@string/add_schedule_title"
+        app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge"
+        app:titleTextColor="@color/text_primary" />
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:fillViewport="true">
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:paddingBottom="@dimen/spacing_large">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="@dimen/spacing_large">
+            android:paddingHorizontal="@dimen/spacing_large"
+            android:paddingBottom="@dimen/spacing_large">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_tag_chip"
-                android:paddingHorizontal="@dimen/spacing_medium"
-                android:paddingVertical="6dp"
-                android:text="@string/add_schedule_header_chip"
-                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
-                android:textColor="@color/calendar_hero" />
-
-            <TextView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_medium"
-                android:text="@string/add_schedule_subtitle"
-                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                android:textColor="@color/text_secondary" />
+                android:layout_marginTop="@dimen/spacing_small"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="30dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_add_schedule_hero"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_large">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_tag_chip"
+                        android:paddingHorizontal="@dimen/spacing_medium"
+                        android:paddingVertical="6dp"
+                        android:text="@string/add_schedule_header_chip"
+                        android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                        android:textColor="@color/calendar_hero" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="@string/add_schedule_hero_title"
+                        android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/add_schedule_subtitle"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/text_secondary" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_large"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_add_schedule_stat"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/add_schedule_hero_stat_primary_title"
+                                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                                android:textColor="@color/calendar_hero" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="@string/add_schedule_hero_stat_primary_value"
+                                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                                android:textColor="@color/text_primary" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/spacing_medium"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_add_schedule_stat"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/add_schedule_hero_stat_secondary_title"
+                                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                                android:textColor="@color/calendar_hero" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="@string/add_schedule_hero_stat_secondary_value"
+                                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                                android:textColor="@color/text_primary" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_large"
-                app:cardBackgroundColor="@color/card_background"
-                app:cardCornerRadius="@dimen/card_radius"
+                app:cardBackgroundColor="@color/add_schedule_panel_fill"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="2dp"
                 app:strokeColor="@color/card_stroke"
                 app:strokeWidth="1dp">
 
@@ -61,54 +152,130 @@
                     android:padding="@dimen/spacing_large">
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/add_schedule_section_basic"
                         android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                         android:textColor="@color/text_primary" />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/title_layout"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_medium"
-                        android:hint="@string/add_schedule_hint">
+                        android:layout_marginTop="10dp"
+                        android:text="@string/add_schedule_helper"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="@color/text_secondary" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/title_layout"
+                        style="@style/Widget.Calendar.AddScheduleInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:hint="@string/add_schedule_hint"
+                        app:boxCornerRadiusBottomEnd="18dp"
+                        app:boxCornerRadiusBottomStart="18dp"
+                        app:boxCornerRadiusTopEnd="18dp"
+                        app:boxCornerRadiusTopStart="18dp">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/title_input"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:inputType="textCapSentences" />
+                            android:inputType="textCapSentences"
+                            android:paddingTop="18dp"
+                            android:paddingBottom="18dp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <TextView
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/location_layout"
+                        style="@style/Widget.Calendar.AddScheduleInput"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_medium"
-                        android:text="@string/add_schedule_helper"
-                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/text_secondary" />
+                        android:layout_marginTop="16dp"
+                        android:hint="@string/add_schedule_location_hint"
+                        app:boxCornerRadiusBottomEnd="18dp"
+                        app:boxCornerRadiusBottomStart="18dp"
+                        app:boxCornerRadiusTopEnd="18dp"
+                        app:boxCornerRadiusTopStart="18dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_large"
-                        android:text="@string/add_schedule_section_priority"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                        android:textColor="@color/text_primary" />
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/location_input"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapSentences"
+                            android:paddingTop="18dp"
+                            android:paddingBottom="18dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        android:id="@+id/note_layout"
+                        style="@style/Widget.Calendar.AddScheduleInput"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_medium">
+                        android:layout_marginTop="16dp"
+                        android:hint="@string/add_schedule_note_hint"
+                        app:boxCornerRadiusBottomEnd="18dp"
+                        app:boxCornerRadiusBottomStart="18dp"
+                        app:boxCornerRadiusTopEnd="18dp"
+                        app:boxCornerRadiusTopStart="18dp">
 
-                        <AutoCompleteTextView
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/note_input"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="top|start"
+                            android:inputType="textMultiLine|textCapSentences"
+                            android:minLines="4"
+                            android:paddingTop="18dp"
+                            android:paddingBottom="18dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/add_schedule_section_priority"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                            android:textColor="@color/text_primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/add_schedule_priority_tip"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="@color/text_secondary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.Calendar.AddScheduleDropdown"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        app:boxCornerRadiusBottomEnd="18dp"
+                        app:boxCornerRadiusBottomStart="18dp"
+                        app:boxCornerRadiusTopEnd="18dp"
+                        app:boxCornerRadiusTopStart="18dp">
+
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
                             android:id="@+id/priority_input"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:inputType="none" />
+                            android:completionThreshold="2147483647"
+                            android:dropDownHeight="wrap_content"
+                            android:dropDownVerticalOffset="12dp"
+                            android:inputType="none"
+                            android:paddingTop="18dp"
+                            android:paddingBottom="18dp"
+                            android:popupBackground="@drawable/bg_priority_dropdown_popup"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -117,8 +284,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_large"
-                app:cardBackgroundColor="@color/card_background"
-                app:cardCornerRadius="@dimen/card_radius"
+                app:cardBackgroundColor="@color/add_schedule_panel_fill"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="2dp"
                 app:strokeColor="@color/card_stroke"
                 app:strokeWidth="1dp">
 
@@ -129,18 +297,26 @@
                     android:padding="@dimen/spacing_large">
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/add_schedule_section_time"
                         android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                         android:textColor="@color/text_primary" />
 
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/add_schedule_time_helper"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="@color/text_secondary" />
+
                     <LinearLayout
                         android:id="@+id/start_time_row"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_medium"
-                        android:background="@drawable/bg_time_panel"
+                        android:layout_marginTop="18dp"
+                        android:background="@drawable/bg_add_schedule_time_panel"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:padding="@dimen/spacing_large">
@@ -162,14 +338,17 @@
                                 android:id="@+id/start_time_value"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                                android:layout_marginTop="8dp"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                                 android:textColor="@color/text_primary" />
                         </LinearLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:background="@drawable/bg_tag_chip"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="6dp"
                             android:text="@string/add_schedule_pick"
                             android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
                             android:textColor="@color/calendar_hero" />
@@ -179,8 +358,8 @@
                         android:id="@+id/end_time_row"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_medium"
-                        android:background="@drawable/bg_time_panel"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_add_schedule_time_panel"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:padding="@dimen/spacing_large">
@@ -202,49 +381,64 @@
                                 android:id="@+id/end_time_value"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                                android:layout_marginTop="8dp"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                                 android:textColor="@color/text_primary" />
                         </LinearLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:background="@drawable/bg_tag_chip"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="6dp"
                             android:text="@string/add_schedule_pick"
                             android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
                             android:textColor="@color/calendar_hero" />
                     </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_medium"
-                        android:text="@string/add_schedule_time_helper"
-                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/text_secondary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </ScrollView>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/save_button"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/spacing_large"
-        android:layout_marginTop="@dimen/spacing_small"
-        android:layout_marginBottom="@dimen/spacing_small"
-        android:text="@string/add_schedule_save" />
+        android:background="@drawable/bg_add_schedule_bottom_bar"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/spacing_large"
+        android:paddingTop="14dp"
+        android:paddingBottom="18dp">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/delete_button"
-        style="@style/Widget.Material3.Button.TextButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/spacing_large"
-        android:layout_marginBottom="@dimen/spacing_large"
-        android:text="@string/edit_schedule_delete"
-        android:textColor="@color/accent_dot"
-        android:visibility="gone" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/add_schedule_bottom_hint"
+            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+            android:textColor="@color/text_secondary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/save_button"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="@color/calendar_hero"
+            android:elevation="0dp"
+            android:text="@string/add_schedule_save"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:textColor="@color/calendar_hero_on"
+            app:cornerRadius="28dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/delete_button"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/edit_schedule_delete"
+            android:textColor="@color/accent_dot"
+            android:visibility="gone" />
+    </LinearLayout>
 
 </LinearLayout>

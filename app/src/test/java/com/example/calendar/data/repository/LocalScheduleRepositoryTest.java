@@ -23,18 +23,39 @@ public class LocalScheduleRepositoryTest {
         FakeScheduleDao dao = new FakeScheduleDao();
         LocalScheduleRepository repository = new LocalScheduleRepository(dao);
 
-        long id = repository.addSchedule(new Schedule("Deep work", 1713261600000L, 1713265200000L));
+        long id = repository.addSchedule(new Schedule(
+                0L,
+                "Deep work",
+                1713261600000L,
+                1713265200000L,
+                "中",
+                0,
+                "三楼工位",
+                "保持专注"
+        ));
 
         assertEquals(1L, id);
         assertEquals(1, dao.savedSchedules.size());
         assertEquals("Deep work", dao.savedSchedules.get(0).title);
         assertEquals("中", dao.savedSchedules.get(0).priority);
+        assertEquals("三楼工位", dao.savedSchedules.get(0).location);
+        assertEquals("保持专注", dao.savedSchedules.get(0).note);
     }
 
     @Test
     public void getOpenSchedules_returnsMappedDomainModels() {
         FakeScheduleDao dao = new FakeScheduleDao();
-        dao.savedSchedules.add(new ScheduleEntity(1L, "Read notes", 1713261600000L, 1713265200000L, "高", 1, false));
+        dao.savedSchedules.add(new ScheduleEntity(
+                1L,
+                "Read notes",
+                1713261600000L,
+                1713265200000L,
+                "高",
+                1,
+                false,
+                "会议室 B",
+                "同步会议纪要"
+        ));
         LocalScheduleRepository repository = new LocalScheduleRepository(dao);
 
         List<Schedule> schedules = repository.getOpenSchedules();
@@ -42,6 +63,8 @@ public class LocalScheduleRepositoryTest {
         assertEquals(1, schedules.size());
         assertEquals("Read notes", schedules.get(0).getTitle());
         assertEquals("高", schedules.get(0).getPriority());
+        assertEquals("会议室 B", schedules.get(0).getLocation());
+        assertEquals("同步会议纪要", schedules.get(0).getNote());
     }
 
     @Test
