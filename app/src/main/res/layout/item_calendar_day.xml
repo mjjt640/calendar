@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="3dp"
+    android:paddingVertical="2dp">
+
+    <LinearLayout
+        android:id="@+id/day_container"
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:background="@drawable/bg_calendar_day_idle"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/day_number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+            android:textColor="@color/text_primary" />
+
+        <View
+            android:id="@+id/marker_dot"
+            android:layout_width="4dp"
+            android:layout_height="4dp"
+            android:layout_marginTop="3dp"
+            android:background="@drawable/bg_calendar_marker"
+            android:visibility="invisible" />
+    </LinearLayout>
+
+</FrameLayout>

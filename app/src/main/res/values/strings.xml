@@ -74,4 +74,19 @@
     <string name="user_item_help">帮助与反馈</string>
     <string name="user_item_about">关于我们</string>
     <string name="user_logout">退出登录</string>
+    <string name="home_previous_month">上月</string>
+    <string name="home_next_month">下月</string>
+    <string name="home_reset_today">回到今日</string>
+    <string name="home_calendar_hint_v2">左右切换月份，点击日期就能查看当天安排，带红点的日期表示已有事项。</string>
+    <string name="home_week_mon">一</string>
+    <string name="home_week_tue">二</string>
+    <string name="home_week_wed">三</string>
+    <string name="home_week_thu">四</string>
+    <string name="home_week_fri">五</string>
+    <string name="home_week_sat">六</string>
+    <string name="home_week_sun">日</string>
+    <string name="home_stat_calendar">月历总览\n一眼看到整月安排</string>
+    <string name="home_stat_filter">日期筛选\n点哪天就看哪天</string>
+    <string name="home_month_section_title">月历概览</string>
+    <string name="home_today_subtitle_short">长按事项可编辑删除，拖住右侧把手可调整顺序。</string>
 </resources>

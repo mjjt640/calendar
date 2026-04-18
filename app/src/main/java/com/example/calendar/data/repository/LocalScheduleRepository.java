@@ -4,8 +4,13 @@ import com.example.calendar.data.local.dao.ScheduleDao;
 import com.example.calendar.data.local.entity.ScheduleEntity;
 import com.example.calendar.domain.model.Schedule;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class LocalScheduleRepository implements ScheduleRepository {
     private final ScheduleDao scheduleDao;
@@ -37,6 +42,23 @@ public class LocalScheduleRepository implements ScheduleRepository {
     @Override
     public List<Schedule> getSchedulesOrderedByTime() {
         return mapSchedules(scheduleDao.getOpenSchedulesByTime());
+    }
+
+    @Override
+    public List<Schedule> getSchedulesForDay(long dayStartMillis, long dayEndMillis) {
+        return mapSchedules(scheduleDao.getOpenSchedulesBetween(dayStartMillis, dayEndMillis));
+    }
+
+    @Override
+    public Set<LocalDate> getScheduleDayMarkers(long monthStartMillis, long monthEndMillis) {
+        List<Long> startTimes = scheduleDao.getOpenScheduleStartTimesBetween(monthStartMillis, monthEndMillis);
+        Set<LocalDate> result = new LinkedHashSet<>();
+        for (Long startTime : startTimes) {
+            result.add(Instant.ofEpochMilli(startTime)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate());
+        }
+        return result;
     }
 
     @Override

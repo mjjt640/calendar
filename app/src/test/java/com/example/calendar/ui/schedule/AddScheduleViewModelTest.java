@@ -8,8 +8,11 @@ import com.example.calendar.domain.model.Schedule;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -113,6 +116,16 @@ public class AddScheduleViewModelTest {
         @Override
         public List<Schedule> getSchedulesOrderedByTime() {
             return new ArrayList<>(savedSchedules);
+        }
+
+        @Override
+        public List<Schedule> getSchedulesForDay(long dayStartMillis, long dayEndMillis) {
+            return new ArrayList<>(savedSchedules);
+        }
+
+        @Override
+        public Set<LocalDate> getScheduleDayMarkers(long monthStartMillis, long monthEndMillis) {
+            return new LinkedHashSet<>();
         }
 
         @Override

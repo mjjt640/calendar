@@ -8,49 +8,115 @@ import com.example.calendar.domain.model.Schedule;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class HomeViewModelTest {
     @Rule
     public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
     @Test
-    public void defaultTitle_isChineseScheduleTitle() {
-        HomeViewModel viewModel = new HomeViewModel(new FakeScheduleRepository());
+    public void defaultState_selectsTodayAndLoadsTodaySchedules() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        repository.addSchedule(new Schedule(1L, "Today item", millisOf(2026, 4, 18, 9, 0), millisOf(2026, 4, 18, 10, 0), "高", 1));
+        repository.addSchedule(new Schedule(2L, "Tomorrow item", millisOf(2026, 4, 19, 9, 0), millisOf(2026, 4, 19, 10, 0), "中", 2));
+        HomeViewModel viewModel = new HomeViewModel(repository, fixedClock());
 
         assertEquals("日程安排", viewModel.getScreenTitle());
+        assertEquals(YearMonth.of(2026, 4), viewModel.getVisibleMonthForTest());
+        assertEquals(LocalDate.of(2026, 4, 18), viewModel.getSelectedDateForTest());
+        assertEquals("4月18日安排", viewModel.getSelectedDateLabel().getValue());
+        assertEquals(1, viewModel.getSchedules().getValue().size());
+        assertEquals("Today item", viewModel.getSchedules().getValue().get(0).getTitle());
+        assertEquals(2, viewModel.getMonthState().getValue().getCells().stream().filter(cell -> cell.hasSchedule()).count());
     }
 
     @Test
-    public void getTimeSortedSchedules_reordersSchedulesByStartTime() {
+    public void selectDate_refreshesSelectedDaySchedules() {
         FakeScheduleRepository repository = new FakeScheduleRepository();
-        repository.schedules.add(new Schedule(2L, "项目复盘", 200L, 300L, "中", 2));
-        repository.schedules.add(new Schedule(1L, "团队晨会", 100L, 200L, "高", 1));
-        HomeViewModel viewModel = new HomeViewModel(repository);
+        repository.addSchedule(new Schedule(1L, "Today item", millisOf(2026, 4, 18, 9, 0), millisOf(2026, 4, 18, 10, 0), "高", 1));
+        repository.addSchedule(new Schedule(2L, "Review", millisOf(2026, 4, 10, 14, 0), millisOf(2026, 4, 10, 15, 0), "中", 2));
+        HomeViewModel viewModel = new HomeViewModel(repository, fixedClock());
 
-        List<Schedule> sorted = viewModel.getTimeSortedSchedules();
+        viewModel.selectDate(LocalDate.of(2026, 4, 10));
 
-        assertEquals("团队晨会", sorted.get(0).getTitle());
-        assertEquals("项目复盘", sorted.get(1).getTitle());
+        assertEquals(LocalDate.of(2026, 4, 10), viewModel.getSelectedDateForTest());
+        assertEquals("4月10日安排", viewModel.getSelectedDateLabel().getValue());
+        assertEquals(1, viewModel.getSchedules().getValue().size());
+        assertEquals("Review", viewModel.getSchedules().getValue().get(0).getTitle());
     }
 
     @Test
-    public void persistManualOrder_savesDraggedOrder() {
+    public void showNextMonth_selectsFirstDayWhenPreviousDateIsOutsideNewMonth() {
         FakeScheduleRepository repository = new FakeScheduleRepository();
-        HomeViewModel viewModel = new HomeViewModel(repository);
+        repository.addSchedule(new Schedule(1L, "May plan", millisOf(2026, 5, 1, 9, 0), millisOf(2026, 5, 1, 10, 0), "中", 1));
+        HomeViewModel viewModel = new HomeViewModel(repository, fixedClock());
+
+        viewModel.showNextMonth();
+
+        assertEquals(YearMonth.of(2026, 5), viewModel.getVisibleMonthForTest());
+        assertEquals(LocalDate.of(2026, 5, 1), viewModel.getSelectedDateForTest());
+        assertEquals("5月1日安排", viewModel.getSelectedDateLabel().getValue());
+        assertEquals(1, viewModel.getSchedules().getValue().size());
+        assertEquals("May plan", viewModel.getSchedules().getValue().get(0).getTitle());
+    }
+
+    @Test
+    public void resetToToday_restoresTodayMonthAndSchedules() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        repository.addSchedule(new Schedule(1L, "Today item", millisOf(2026, 4, 18, 9, 0), millisOf(2026, 4, 18, 10, 0), "高", 1));
+        repository.addSchedule(new Schedule(2L, "May plan", millisOf(2026, 5, 1, 9, 0), millisOf(2026, 5, 1, 10, 0), "中", 2));
+        HomeViewModel viewModel = new HomeViewModel(repository, fixedClock());
+
+        viewModel.showNextMonth();
+        viewModel.resetToToday();
+
+        assertEquals(YearMonth.of(2026, 4), viewModel.getVisibleMonthForTest());
+        assertEquals(LocalDate.of(2026, 4, 18), viewModel.getSelectedDateForTest());
+        assertEquals("4月18日安排", viewModel.getSelectedDateLabel().getValue());
+        assertEquals(1, viewModel.getSchedules().getValue().size());
+        assertEquals("Today item", viewModel.getSchedules().getValue().get(0).getTitle());
+    }
+
+    @Test
+    public void persistManualOrder_savesDraggedOrderForCurrentSelection() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        HomeViewModel viewModel = new HomeViewModel(repository, fixedClock());
         List<Schedule> reordered = Arrays.asList(
-                new Schedule(2L, "项目复盘", 200L, 300L, "中", 2),
-                new Schedule(1L, "团队晨会", 100L, 200L, "高", 1)
+                new Schedule(2L, "Review", millisOf(2026, 4, 18, 11, 0), millisOf(2026, 4, 18, 12, 0), "中", 2),
+                new Schedule(1L, "Today item", millisOf(2026, 4, 18, 9, 0), millisOf(2026, 4, 18, 10, 0), "高", 1)
         );
 
         viewModel.persistManualOrder(reordered);
 
-        assertEquals("项目复盘", viewModel.getSchedules().getValue().get(0).getTitle());
         assertEquals(Arrays.asList(2L, 1L), repository.updatedOrderIds);
+        assertEquals("Review", viewModel.getSchedules().getValue().get(0).getTitle());
+    }
+
+    private static Clock fixedClock() {
+        return Clock.fixed(
+                Instant.parse("2026-04-18T02:00:00Z"),
+                ZoneId.systemDefault()
+        );
+    }
+
+    private static long millisOf(int year, int month, int day, int hour, int minute) {
+        return LocalDate.of(year, month, day)
+                .atTime(hour, minute)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
     }
 
     private static class FakeScheduleRepository implements ScheduleRepository {
@@ -76,7 +142,38 @@ public class HomeViewModelTest {
         }
 
         @Override
+        public List<Schedule> getSchedulesForDay(long dayStartMillis, long dayEndMillis) {
+            List<Schedule> result = new ArrayList<>();
+            for (Schedule schedule : schedules) {
+                if (schedule.getStartTime() >= dayStartMillis && schedule.getStartTime() < dayEndMillis) {
+                    result.add(schedule);
+                }
+            }
+            result.sort((a, b) -> {
+                int byOrder = Integer.compare(a.getSortOrder(), b.getSortOrder());
+                return byOrder != 0 ? byOrder : Long.compare(a.getStartTime(), b.getStartTime());
+            });
+            return result;
+        }
+
+        @Override
+        public Set<LocalDate> getScheduleDayMarkers(long monthStartMillis, long monthEndMillis) {
+            Set<LocalDate> result = new LinkedHashSet<>();
+            for (Schedule schedule : schedules) {
+                if (schedule.getStartTime() >= monthStartMillis && schedule.getStartTime() < monthEndMillis) {
+                    result.add(Instant.ofEpochMilli(schedule.getStartTime()).atZone(ZoneId.systemDefault()).toLocalDate());
+                }
+            }
+            return result;
+        }
+
+        @Override
         public Schedule getScheduleById(long id) {
+            for (Schedule schedule : schedules) {
+                if (schedule.getId() == id) {
+                    return schedule;
+                }
+            }
             return null;
         }
 

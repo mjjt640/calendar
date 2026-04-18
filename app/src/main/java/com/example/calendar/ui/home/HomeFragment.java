@@ -13,7 +13,9 @@ import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -28,10 +30,13 @@ import java.util.List;
 public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
     private SchedulePreviewAdapter adapter;
+    private CalendarMonthAdapter calendarAdapter;
     private HomeViewModel viewModel;
     private ItemTouchHelper itemTouchHelper;
     private boolean dragMoved;
     private boolean sortingInProgress;
+    private boolean monthUiInitialized;
+    private int pendingMonthAnimationDirection;
 
     @Nullable
     @Override
@@ -64,8 +69,15 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
+        calendarAdapter = new CalendarMonthAdapter(date -> {
+            if (!sortingInProgress) {
+                viewModel.selectDate(date);
+            }
+        });
         itemTouchHelper = new ItemTouchHelper(itemTouchCallback);
 
+        binding.calendarGrid.setLayoutManager(new GridLayoutManager(requireContext(), 7));
+        binding.calendarGrid.setAdapter(calendarAdapter);
         binding.scheduleList.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.scheduleList.setItemAnimator(new DefaultItemAnimator());
         binding.scheduleList.setAdapter(adapter);
@@ -74,13 +86,32 @@ public class HomeFragment extends Fragment {
         binding.addScheduleButton.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), AddScheduleActivity.class))
         );
+        binding.previousMonthButton.setOnClickListener(v -> {
+            pendingMonthAnimationDirection = -1;
+            viewModel.showPreviousMonth();
+        });
+        binding.nextMonthButton.setOnClickListener(v -> {
+            pendingMonthAnimationDirection = 1;
+            viewModel.showNextMonth();
+        });
+        binding.resetTodayButton.setOnClickListener(v -> viewModel.resetToToday());
         binding.sortByTimeButton.setOnClickListener(v -> animateTimeSort());
 
         viewModel.getScreenTitleLiveData().observe(getViewLifecycleOwner(), binding.screenTitle::setText);
+        viewModel.getMonthState().observe(getViewLifecycleOwner(), state -> {
+            if (state == null) {
+                return;
+            }
+            binding.monthTitle.setText(state.getTitle());
+            calendarAdapter.submitItems(state.getCells());
+            animateMonthChangeIfNeeded();
+        });
+        viewModel.getSelectedDateLabel().observe(getViewLifecycleOwner(), binding.selectedDateTitle::setText);
         viewModel.getSchedules().observe(getViewLifecycleOwner(), schedules -> {
             if (!sortingInProgress) {
                 adapter.submitItems(schedules);
             }
+            binding.scheduleEmptyState.setVisibility(schedules == null || schedules.isEmpty() ? View.VISIBLE : View.GONE);
         });
 
         viewModel.ensureSeedData();
@@ -111,11 +142,13 @@ public class HomeFragment extends Fragment {
         }
         sortingInProgress = true;
         binding.sortByTimeButton.setEnabled(false);
+        binding.resetTodayButton.setEnabled(false);
         adapter.animateSortTo(targetItems, () -> {
             viewModel.persistManualOrder(adapter.getCurrentItems());
             sortingInProgress = false;
             if (binding != null) {
                 binding.sortByTimeButton.setEnabled(true);
+                binding.resetTodayButton.setEnabled(true);
             }
         });
     }
@@ -126,6 +159,53 @@ public class HomeFragment extends Fragment {
         popupMenu.getMenu().add(0, 2, 2, getString(R.string.schedule_menu_delete));
         popupMenu.setOnMenuItemClickListener(item -> handleMenuClick(item, schedule));
         popupMenu.show();
+    }
+
+    private void animateMonthChangeIfNeeded() {
+        if (binding == null) {
+            return;
+        }
+        if (!monthUiInitialized || pendingMonthAnimationDirection == 0) {
+            resetMonthAnimationTargets();
+            monthUiInitialized = true;
+            pendingMonthAnimationDirection = 0;
+            return;
+        }
+
+        float offset = pendingMonthAnimationDirection * binding.calendarGrid.getResources().getDisplayMetrics().density * 28f;
+        FastOutSlowInInterpolator interpolator = new FastOutSlowInInterpolator();
+
+        animateMonthTarget(binding.monthTitle, offset, interpolator);
+        animateMonthTarget(binding.calendarWeekRow, offset, interpolator);
+        animateMonthTarget(binding.calendarGrid, offset, interpolator);
+
+        pendingMonthAnimationDirection = 0;
+        monthUiInitialized = true;
+    }
+
+    private void animateMonthTarget(View target, float offset, FastOutSlowInInterpolator interpolator) {
+        target.animate().cancel();
+        target.setAlpha(0f);
+        target.setTranslationX(offset);
+        target.animate()
+                .alpha(1f)
+                .translationX(0f)
+                .setDuration(220L)
+                .setInterpolator(interpolator)
+                .start();
+    }
+
+    private void resetMonthAnimationTargets() {
+        binding.monthTitle.animate().cancel();
+        binding.calendarWeekRow.animate().cancel();
+        binding.calendarGrid.animate().cancel();
+
+        binding.monthTitle.setAlpha(1f);
+        binding.monthTitle.setTranslationX(0f);
+        binding.calendarWeekRow.setAlpha(1f);
+        binding.calendarWeekRow.setTranslationX(0f);
+        binding.calendarGrid.setAlpha(1f);
+        binding.calendarGrid.setTranslationX(0f);
     }
 
     private boolean handleMenuClick(MenuItem item, Schedule schedule) {
