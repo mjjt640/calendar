@@ -89,4 +89,6 @@
     <string name="home_stat_filter">日期筛选\n点哪天就看哪天</string>
     <string name="home_month_section_title">月历概览</string>
     <string name="home_today_subtitle_short">长按事项可编辑删除，拖住右侧把手可调整顺序。</string>
+    <string name="home_recurring_action_pending">Recurring schedule edit and delete will be available in the next step.</string>
+    <string name="home_recurring_sort_pending">Recurring schedules cannot be reordered yet.</string>
 </resources>

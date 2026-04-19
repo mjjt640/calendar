@@ -65,4 +65,18 @@ public class ScheduleEntity {
                                             @NonNull String location, @NonNull String note) {
         return new ScheduleEntity(id, title, startTime, endTime, priority, sortOrder, completed, location, note);
     }
+
+    public static ScheduleEntity fromDomain(@NonNull Schedule schedule, boolean completed) {
+        return fromDomain(
+                schedule.getId(),
+                schedule.getTitle(),
+                schedule.getStartTime(),
+                schedule.getEndTime(),
+                schedule.getPriority(),
+                schedule.getSortOrder(),
+                completed,
+                schedule.getLocation(),
+                schedule.getNote()
+        );
+    }
 }

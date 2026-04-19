@@ -103,6 +103,20 @@ public class LocalScheduleRepositoryTest {
         )), markers);
     }
 
+    @Test
+    public void updateManualOrder_withOneTimeSchedules_rewritesSortOrder() {
+        FakeScheduleDao dao = new FakeScheduleDao();
+        LocalScheduleRepository repository = new LocalScheduleRepository(dao);
+
+        repository.updateManualOrder(Arrays.asList(
+                new Schedule(2L, "Second", millisOf(2026, 4, 18, 11, 0), millisOf(2026, 4, 18, 12, 0), Schedule.PRIORITY_MEDIUM, 2),
+                new Schedule(1L, "First", millisOf(2026, 4, 18, 9, 0), millisOf(2026, 4, 18, 10, 0), Schedule.PRIORITY_HIGH, 1)
+        ));
+
+        assertEquals(Arrays.asList(2L, 1L), dao.updatedIds);
+        assertEquals(Arrays.asList(1, 2), dao.updatedSortOrders);
+    }
+
     private static long millisOf(int year, int month, int day, int hour, int minute) {
         return LocalDate.of(year, month, day)
                 .atTime(hour, minute)
@@ -113,6 +127,8 @@ public class LocalScheduleRepositoryTest {
 
     private static class FakeScheduleDao implements ScheduleDao {
         private final List<ScheduleEntity> savedSchedules = new ArrayList<>();
+        private final List<Long> updatedIds = new ArrayList<>();
+        private final List<Integer> updatedSortOrders = new ArrayList<>();
 
         @Override
         public long insert(ScheduleEntity scheduleEntity) {
@@ -123,6 +139,8 @@ public class LocalScheduleRepositoryTest {
 
         @Override
         public void update(ScheduleEntity scheduleEntity) {
+            updatedIds.add(scheduleEntity.id);
+            updatedSortOrders.add(scheduleEntity.sortOrder);
         }
 
         @Override
@@ -142,6 +160,11 @@ public class LocalScheduleRepositoryTest {
 
         @Override
         public List<ScheduleEntity> getOpenSchedulesByTime() {
+            return new ArrayList<>(savedSchedules);
+        }
+
+        @Override
+        public List<ScheduleEntity> getAllOpenSchedules() {
             return new ArrayList<>(savedSchedules);
         }
 

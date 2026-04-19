@@ -24,6 +24,7 @@ import com.example.calendar.R;
 import com.example.calendar.databinding.FragmentHomeBinding;
 import com.example.calendar.domain.model.Schedule;
 import com.example.calendar.ui.schedule.AddScheduleActivity;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.List;
 
@@ -56,6 +57,11 @@ public class HomeFragment extends Fragment {
             @Override
             public void onStartDrag(RecyclerView.ViewHolder holder) {
                 if (sortingInProgress) {
+                    return;
+                }
+                int position = holder.getBindingAdapterPosition();
+                if (adapter.hasRecurringItems() || adapter.isRecurringAt(position)) {
+                    showRecurringSortPending();
                     return;
                 }
                 dragMoved = false;
@@ -136,6 +142,10 @@ public class HomeFragment extends Fragment {
         if (sortingInProgress) {
             return;
         }
+        if (adapter.hasRecurringItems()) {
+            showRecurringSortPending();
+            return;
+        }
         List<Schedule> targetItems = viewModel.getTimeSortedSchedules();
         if (targetItems.size() <= 1) {
             return;
@@ -209,6 +219,10 @@ public class HomeFragment extends Fragment {
     }
 
     private boolean handleMenuClick(MenuItem item, Schedule schedule) {
+        if (schedule.isRecurring()) {
+            showRecurringActionPending();
+            return true;
+        }
         if (item.getItemId() == 1) {
             Intent intent = new Intent(requireContext(), AddScheduleActivity.class);
             intent.putExtra(AddScheduleActivity.EXTRA_SCHEDULE_ID, schedule.getId());
@@ -220,6 +234,20 @@ public class HomeFragment extends Fragment {
             return true;
         }
         return false;
+    }
+
+    private void showRecurringActionPending() {
+        if (binding == null) {
+            return;
+        }
+        Snackbar.make(binding.getRoot(), R.string.home_recurring_action_pending, Snackbar.LENGTH_SHORT).show();
+    }
+
+    private void showRecurringSortPending() {
+        if (binding == null) {
+            return;
+        }
+        Snackbar.make(binding.getRoot(), R.string.home_recurring_sort_pending, Snackbar.LENGTH_SHORT).show();
     }
 
     private final ItemTouchHelper.SimpleCallback itemTouchCallback =

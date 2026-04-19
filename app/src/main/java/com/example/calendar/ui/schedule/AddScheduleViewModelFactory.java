@@ -18,8 +18,10 @@ public class AddScheduleViewModelFactory implements ViewModelProvider.Factory {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
+        com.example.calendar.data.local.db.AppDatabase database = DatabaseProvider.getInstance(context);
         LocalScheduleRepository repository = new LocalScheduleRepository(
-                DatabaseProvider.getInstance(context).scheduleDao()
+                database.scheduleDao(),
+                database.recurrenceDao()
         );
         return (T) new AddScheduleViewModel(repository);
     }

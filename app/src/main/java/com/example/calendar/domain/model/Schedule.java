@@ -13,13 +13,22 @@ public class Schedule {
     private final int sortOrder;
     private final String location;
     private final String note;
+    private final boolean recurring;
+    private final Long recurrenceSeriesId;
+    private final Long occurrenceStartTime;
 
     public Schedule(long id, String title, long startTime, long endTime, String priority, int sortOrder) {
-        this(id, title, startTime, endTime, priority, sortOrder, "", "");
+        this(id, title, startTime, endTime, priority, sortOrder, "", "", false, null, null);
     }
 
     public Schedule(long id, String title, long startTime, long endTime, String priority, int sortOrder,
                     String location, String note) {
+        this(id, title, startTime, endTime, priority, sortOrder, location, note, false, null, null);
+    }
+
+    public Schedule(long id, String title, long startTime, long endTime, String priority, int sortOrder,
+                    String location, String note, boolean recurring, Long recurrenceSeriesId,
+                    Long occurrenceStartTime) {
         this.id = id;
         this.title = title == null ? "" : title;
         this.startTime = startTime;
@@ -28,10 +37,13 @@ public class Schedule {
         this.sortOrder = sortOrder;
         this.location = location == null ? "" : location;
         this.note = note == null ? "" : note;
+        this.recurring = recurring;
+        this.recurrenceSeriesId = recurrenceSeriesId;
+        this.occurrenceStartTime = occurrenceStartTime;
     }
 
     public Schedule(String title, long startTime, long endTime) {
-        this(0L, title, startTime, endTime, PRIORITY_MEDIUM, 0, "", "");
+        this(0L, title, startTime, endTime, PRIORITY_MEDIUM, 0, "", "", false, null, null);
     }
 
     public long getId() {
@@ -66,8 +78,32 @@ public class Schedule {
         return note;
     }
 
+    public boolean isRecurring() {
+        return recurring;
+    }
+
+    public Long getRecurrenceSeriesId() {
+        return recurrenceSeriesId;
+    }
+
+    public Long getOccurrenceStartTime() {
+        return occurrenceStartTime;
+    }
+
     public Schedule copyWithSortOrder(int nextSortOrder) {
-        return new Schedule(id, title, startTime, endTime, priority, nextSortOrder, location, note);
+        return new Schedule(
+                id,
+                title,
+                startTime,
+                endTime,
+                priority,
+                nextSortOrder,
+                location,
+                note,
+                recurring,
+                recurrenceSeriesId,
+                occurrenceStartTime
+        );
     }
 
     public Schedule copyForUpdate(String nextTitle, long nextStartTime, long nextEndTime, String nextPriority) {
@@ -84,7 +120,10 @@ public class Schedule {
                 nextPriority,
                 sortOrder,
                 nextLocation,
-                nextNote
+                nextNote,
+                recurring,
+                recurrenceSeriesId,
+                occurrenceStartTime
         );
     }
 }

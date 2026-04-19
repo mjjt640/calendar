@@ -20,8 +20,9 @@ public class HomeViewModelFactory implements ViewModelProvider.Factory {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
+        com.example.calendar.data.local.db.AppDatabase database = DatabaseProvider.getInstance(context);
         return (T) new HomeViewModel(
-                new LocalScheduleRepository(DatabaseProvider.getInstance(context).scheduleDao())
+                new LocalScheduleRepository(database.scheduleDao(), database.recurrenceDao())
         );
     }
 }

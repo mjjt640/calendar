@@ -30,6 +30,9 @@ public interface ScheduleDao {
     @Query("SELECT * FROM schedules WHERE completed = 0 ORDER BY startTime ASC LIMIT 50")
     List<ScheduleEntity> getOpenSchedulesByTime();
 
+    @Query("SELECT * FROM schedules WHERE completed = 0 ORDER BY sortOrder ASC, startTime ASC")
+    List<ScheduleEntity> getAllOpenSchedules();
+
     @Query("SELECT * FROM schedules WHERE completed = 0 AND startTime >= :startTimeInclusive AND startTime < :endTimeExclusive ORDER BY sortOrder ASC, startTime ASC")
     List<ScheduleEntity> getOpenSchedulesBetween(long startTimeInclusive, long endTimeExclusive);
 
