@@ -91,4 +91,48 @@
     <string name="home_today_subtitle_short">长按事项可编辑删除，拖住右侧把手可调整顺序。</string>
     <string name="home_recurring_action_pending">Recurring schedule edit and delete will be available in the next step.</string>
     <string name="home_recurring_sort_pending">Recurring schedules cannot be reordered yet.</string>
+    <string name="recurrence_config_title">重复设置</string>
+    <string name="recurrence_config_header_chip">重复日程</string>
+    <string name="recurrence_config_headline">先把重复规则定清楚，再回到表单继续填写</string>
+    <string name="recurrence_config_subtitle">当前页面只编辑草稿规则，不会直接保存到仓库。确认后会把结果回传给上一页。</string>
+    <string name="recurrence_config_summary_label">当前摘要</string>
+    <string name="recurrence_config_frequency_title">重复频率</string>
+    <string name="recurrence_config_frequency_hint">先选择常用频率；只有选“自定义”时，才需要填写间隔单位。</string>
+    <string name="recurrence_config_frequency_single">单次，不重复</string>
+    <string name="recurrence_config_frequency_daily">每天</string>
+    <string name="recurrence_config_frequency_weekly">每周</string>
+    <string name="recurrence_config_frequency_monthly">每月</string>
+    <string name="recurrence_config_frequency_custom">自定义间隔</string>
+    <string name="recurrence_config_custom_title">自定义间隔</string>
+    <string name="recurrence_config_custom_hint">例如每 2 周、每 3 个月。间隔必须大于 0。</string>
+    <string name="recurrence_config_custom_interval_hint">间隔</string>
+    <string name="recurrence_config_custom_unit_hint">单位</string>
+    <string name="recurrence_config_duration_title">结束条件</string>
+    <string name="recurrence_config_duration_hint">如果不设置结束条件，这条规则会一直重复。</string>
+    <string name="recurrence_config_duration_picker_hint">选择结束条件</string>
+    <string name="recurrence_config_duration_none">一直重复</string>
+    <string name="recurrence_config_duration_until_date">截止日期</string>
+    <string name="recurrence_config_duration_occurrence_count">共几次</string>
+    <string name="recurrence_config_until_label">截止日期</string>
+    <string name="recurrence_config_pick_date">选择日期</string>
+    <string name="recurrence_config_until_helper">请选择截止日期后再保存</string>
+    <string name="recurrence_config_occurrence_hint">重复次数</string>
+    <string name="recurrence_config_occurrence_suffix">次</string>
+    <string name="recurrence_config_interval_error">间隔必须大于 0</string>
+    <string name="recurrence_config_occurrence_error">次数必须大于 0</string>
+    <string name="recurrence_config_bottom_hint">保存后会把重复草稿回传给上一页，真正落库仍由上一页统一处理。</string>
+    <string name="recurrence_config_save">保存重复设置</string>
+    <string name="recurrence_config_unit_day">天</string>
+    <string name="recurrence_config_unit_week">周</string>
+    <string name="recurrence_config_unit_month">月</string>
+    <string-array name="recurrence_config_unit_labels">
+        <item>@string/recurrence_config_unit_day</item>
+        <item>@string/recurrence_config_unit_week</item>
+        <item>@string/recurrence_config_unit_month</item>
+    </string-array>
+    <string-array name="recurrence_config_duration_labels">
+        <item>@string/recurrence_config_duration_none</item>
+        <item>@string/recurrence_config_duration_until_date</item>
+        <item>@string/recurrence_config_duration_occurrence_count</item>
+    </string-array>
 </resources>
