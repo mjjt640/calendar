@@ -24,40 +24,35 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class AddScheduleViewModelTest {
+    private static final long START_TIME = 1713261600000L;
+    private static final long END_TIME = 1713265200000L;
+
     @Rule
     public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
     @Test
     public void saveSchedule_withValidInput_marksSuccess() {
         FakeScheduleRepository repository = new FakeScheduleRepository();
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713261600000L,
-                1713265200000L
-        );
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
 
-        viewModel.saveSchedule("Team sync", "会议室 A", "带上周报");
+        viewModel.saveSchedule("Team sync", "Room A", "Bring weekly report");
 
         assertTrue(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
         assertNull(viewModel.getValidationMessage().getValue());
         assertEquals(1, repository.savedSchedules.size());
         assertEquals("Team sync", repository.savedSchedules.get(0).getTitle());
-        assertEquals("会议室 A", repository.savedSchedules.get(0).getLocation());
-        assertEquals("带上周报", repository.savedSchedules.get(0).getNote());
+        assertEquals("Room A", repository.savedSchedules.get(0).getLocation());
+        assertEquals("Bring weekly report", repository.savedSchedules.get(0).getNote());
     }
 
     @Test
     public void saveSchedule_withBlankTitle_setsValidationError() {
         FakeScheduleRepository repository = new FakeScheduleRepository();
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713261600000L,
-                1713265200000L
-        );
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
 
-        viewModel.saveSchedule("   ", "会议室 A", "带上周报");
+        viewModel.saveSchedule("   ", "Room A", "Bring weekly report");
 
-        assertEquals("请输入日程标题", viewModel.getValidationMessage().getValue());
+        assertEquals("\u8bf7\u8f93\u5165\u65e5\u7a0b\u6807\u9898", viewModel.getValidationMessage().getValue());
         assertFalse(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
         assertEquals(0, repository.savedSchedules.size());
     }
@@ -65,27 +60,19 @@ public class AddScheduleViewModelTest {
     @Test
     public void init_formatsChineseTimeLabels() {
         FakeScheduleRepository repository = new FakeScheduleRepository();
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713261600000L,
-                1713265200000L
-        );
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
 
-        assertEquals("2024年4月16日 18:00", viewModel.getStartTimeText().getValue());
-        assertEquals("2024年4月16日 19:00", viewModel.getEndTimeText().getValue());
+        assertEquals("2024\u5e744\u670816\u65e5 18:00", viewModel.getStartTimeText().getValue());
+        assertEquals("2024\u5e744\u670816\u65e5 19:00", viewModel.getEndTimeText().getValue());
     }
 
     @Test
     public void init_withValidTimeRange_showsRecurrenceCardAndDefaultsToSingleSummary() {
         FakeScheduleRepository repository = new FakeScheduleRepository();
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713261600000L,
-                1713265200000L
-        );
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
 
         assertTrue(Boolean.TRUE.equals(viewModel.getShowRecurrenceCard().getValue()));
-        assertEquals("单次", viewModel.getRecurrenceSummary().getValue());
+        assertEquals("\u5355\u6b21", viewModel.getRecurrenceSummary().getValue());
         assertFalse(Boolean.TRUE.equals(viewModel.getIsRecurringSchedule().getValue()));
         assertEquals(OccurrenceEditScope.SINGLE, viewModel.getOccurrenceEditScope().getValue());
     }
@@ -93,25 +80,17 @@ public class AddScheduleViewModelTest {
     @Test
     public void updateStartTime_refreshesDisplayedLabel() {
         FakeScheduleRepository repository = new FakeScheduleRepository();
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713261600000L,
-                1713265200000L
-        );
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
 
         viewModel.updateStartTime(1713349800000L);
 
-        assertEquals("2024年4月17日 18:30", viewModel.getStartTimeText().getValue());
+        assertEquals("2024\u5e744\u670817\u65e5 18:30", viewModel.getStartTimeText().getValue());
     }
 
     @Test
     public void applyRecurrenceDraft_refreshesSummary() {
         FakeScheduleRepository repository = new FakeScheduleRepository();
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713261600000L,
-                1713265200000L
-        );
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
 
         viewModel.applyRecurrenceDraft(new RecurrenceDraft(
                 true,
@@ -124,22 +103,39 @@ public class AddScheduleViewModelTest {
                 null
         ));
 
-        assertEquals("每日", viewModel.getRecurrenceSummary().getValue());
+        assertEquals("\u6bcf\u65e5", viewModel.getRecurrenceSummary().getValue());
+        assertTrue(Boolean.TRUE.equals(viewModel.getIsRecurringSchedule().getValue()));
+    }
+
+    @Test
+    public void applyRecurrenceDraft_withUntilDate_refreshesSummaryWithDuration() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
+
+        viewModel.applyRecurrenceDraft(new RecurrenceDraft(
+                true,
+                null,
+                RecurrenceFrequency.WEEKLY,
+                RecurrenceDraft.UNIT_WEEK,
+                1,
+                RecurrenceDurationType.UNTIL_DATE,
+                1714492800000L,
+                null
+        ));
+
+        assertEquals("\u6bcf\u5468\uff0c\u622a\u6b62\u5230 2024-05-01", viewModel.getRecurrenceSummary().getValue());
         assertTrue(Boolean.TRUE.equals(viewModel.getIsRecurringSchedule().getValue()));
     }
 
     @Test
     public void saveSchedule_withEndBeforeStart_setsValidationError() {
         FakeScheduleRepository repository = new FakeScheduleRepository();
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713265200000L,
-                1713261600000L
-        );
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, END_TIME, START_TIME);
 
-        viewModel.saveSchedule("Team sync", "会议室 A", "带上周报");
+        viewModel.saveSchedule("Team sync", "Room A", "Bring weekly report");
 
-        assertEquals("结束时间不能早于开始时间", viewModel.getValidationMessage().getValue());
+        assertEquals("\u7ed3\u675f\u65f6\u95f4\u4e0d\u80fd\u65e9\u4e8e\u5f00\u59cb\u65f6\u95f4",
+                viewModel.getValidationMessage().getValue());
         assertFalse(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
         assertEquals(0, repository.savedSchedules.size());
     }
@@ -149,26 +145,22 @@ public class AddScheduleViewModelTest {
         FakeScheduleRepository repository = new FakeScheduleRepository();
         repository.savedSchedules.add(new Schedule(
                 9L,
-                "客户沟通",
-                1713261600000L,
-                1713265200000L,
-                "高",
+                "Client review",
+                START_TIME,
+                END_TIME,
+                Schedule.PRIORITY_HIGH,
                 3,
-                "线上会议",
-                "确认排期"
+                "Online meeting",
+                "Confirm agenda"
         ));
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713261600000L,
-                1713265200000L
-        );
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
 
         viewModel.loadSchedule(9L);
 
-        assertEquals("客户沟通", viewModel.getTitleText().getValue());
-        assertEquals("线上会议", viewModel.getLocationText().getValue());
-        assertEquals("确认排期", viewModel.getNoteText().getValue());
-        assertEquals("高", viewModel.getPriority().getValue());
+        assertEquals("Client review", viewModel.getTitleText().getValue());
+        assertEquals("Online meeting", viewModel.getLocationText().getValue());
+        assertEquals("Confirm agenda", viewModel.getNoteText().getValue());
+        assertEquals(Schedule.PRIORITY_HIGH, viewModel.getPriority().getValue());
     }
 
     @Test
@@ -176,12 +168,12 @@ public class AddScheduleViewModelTest {
         FakeScheduleRepository repository = new FakeScheduleRepository();
         repository.savedSchedules.add(new Schedule(
                 10L,
-                "晨会",
-                1713261600000L,
-                1713265200000L,
-                "中",
+                "Standup",
+                START_TIME,
+                END_TIME,
+                Schedule.PRIORITY_MEDIUM,
                 3,
-                "线上",
+                "Online",
                 ""
         ));
         RecurrenceDraft recurringDraft = new RecurrenceDraft(
@@ -195,27 +187,59 @@ public class AddScheduleViewModelTest {
                 null
         );
         repository.recurrenceDraftByScheduleId.add(10L, recurringDraft);
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713261600000L,
-                1713265200000L
-        );
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
 
         viewModel.loadSchedule(10L);
 
         assertEquals(recurringDraft, viewModel.getRecurrenceDraft().getValue());
         assertTrue(Boolean.TRUE.equals(viewModel.getIsRecurringSchedule().getValue()));
-        assertEquals("每周", viewModel.getRecurrenceSummary().getValue());
+        assertEquals("\u6bcf\u5468", viewModel.getRecurrenceSummary().getValue());
+    }
+
+    @Test
+    public void loadSchedule_withRecurringDraft_marksOccurrenceScopeSelectionRequired() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        repository.savedSchedules.add(new Schedule(
+                14L,
+                "Standup",
+                START_TIME,
+                END_TIME,
+                Schedule.PRIORITY_MEDIUM,
+                3,
+                "Online",
+                ""
+        ));
+        repository.recurrenceDraftByScheduleId.add(14L, new RecurrenceDraft(
+                true,
+                101L,
+                RecurrenceFrequency.WEEKLY,
+                RecurrenceDraft.UNIT_WEEK,
+                1,
+                RecurrenceDurationType.NONE,
+                null,
+                null
+        ));
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
+
+        viewModel.loadSchedule(14L);
+        viewModel.applyRecurrenceDraft(new RecurrenceDraft(
+                false,
+                null,
+                RecurrenceFrequency.NONE,
+                RecurrenceDraft.UNIT_DAY,
+                1,
+                RecurrenceDurationType.NONE,
+                null,
+                null
+        ));
+
+        assertTrue(Boolean.TRUE.equals(viewModel.getShouldConfirmRecurrenceScope().getValue()));
     }
 
     @Test
     public void saveSchedule_withRecurringDraft_usesRecurringSaveBranch() {
         FakeScheduleRepository repository = new FakeScheduleRepository();
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713261600000L,
-                1713265200000L
-        );
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
         RecurrenceDraft draft = new RecurrenceDraft(
                 true,
                 null,
@@ -228,7 +252,7 @@ public class AddScheduleViewModelTest {
         );
 
         viewModel.applyRecurrenceDraft(draft);
-        viewModel.saveSchedule("Team sync", "会议室 A", "带上周报");
+        viewModel.saveSchedule("Team sync", "Room A", "Bring weekly report");
 
         assertTrue(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
         assertEquals(0, repository.savedSchedules.size());
@@ -242,12 +266,12 @@ public class AddScheduleViewModelTest {
         FakeScheduleRepository repository = new FakeScheduleRepository();
         repository.savedSchedules.add(new Schedule(
                 11L,
-                "周会",
-                1713261600000L,
-                1713265200000L,
-                "中",
+                "Weekly sync",
+                START_TIME,
+                END_TIME,
+                Schedule.PRIORITY_MEDIUM,
                 4,
-                "会议室 B",
+                "Room B",
                 ""
         ));
         repository.recurrenceDraftByScheduleId.add(11L, new RecurrenceDraft(
@@ -260,11 +284,7 @@ public class AddScheduleViewModelTest {
                 null,
                 null
         ));
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713261600000L,
-                1713265200000L
-        );
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
 
         viewModel.loadSchedule(11L);
         viewModel.applyRecurrenceDraft(new RecurrenceDraft(
@@ -277,7 +297,7 @@ public class AddScheduleViewModelTest {
                 null,
                 null
         ));
-        viewModel.saveSchedule("周会", "会议室 B", "");
+        viewModel.saveSchedule("Weekly sync", "Room B", "");
 
         assertEquals(0, repository.updatedSchedules.size());
         assertEquals(1, repository.updatedRecurringSchedules.size());
@@ -290,12 +310,12 @@ public class AddScheduleViewModelTest {
         FakeScheduleRepository repository = new FakeScheduleRepository();
         repository.savedSchedules.add(new Schedule(
                 12L,
-                "周会",
-                1713261600000L,
-                1713265200000L,
-                "中",
+                "Weekly sync",
+                START_TIME,
+                END_TIME,
+                Schedule.PRIORITY_MEDIUM,
                 4,
-                "会议室 B",
+                "Room B",
                 ""
         ));
         repository.recurrenceDraftByScheduleId.add(12L, new RecurrenceDraft(
@@ -309,18 +329,80 @@ public class AddScheduleViewModelTest {
                 null
         ));
         repository.updateRecurringException =
-                new UnsupportedOperationException("编辑已有重复系列规则暂未支持。");
-        AddScheduleViewModel viewModel = new AddScheduleViewModel(
-                repository,
-                1713261600000L,
-                1713265200000L
-        );
+                new UnsupportedOperationException("unsupported recurring update");
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
 
         viewModel.loadSchedule(12L);
-        viewModel.saveSchedule("周会", "会议室 B", "");
+        viewModel.saveSchedule("Weekly sync", "Room B", "");
 
         assertFalse(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
-        assertEquals("当前版本暂不支持直接修改重复日程规则", viewModel.getValidationMessage().getValue());
+        assertEquals("\u5f53\u524d\u7248\u672c\u6682\u4e0d\u652f\u6301\u76f4\u63a5\u4fee\u6539\u91cd\u590d\u65e5\u7a0b\u89c4\u5219",
+                viewModel.getValidationMessage().getValue());
+    }
+
+    @Test
+    public void saveSchedule_whenScopeUpdated_usesSelectedOccurrenceEditScope() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        repository.savedSchedules.add(new Schedule(
+                13L,
+                "Weekly sync",
+                START_TIME,
+                END_TIME,
+                Schedule.PRIORITY_MEDIUM,
+                4,
+                "Room B",
+                ""
+        ));
+        repository.recurrenceDraftByScheduleId.add(13L, new RecurrenceDraft(
+                true,
+                100L,
+                RecurrenceFrequency.WEEKLY,
+                RecurrenceDraft.UNIT_WEEK,
+                1,
+                RecurrenceDurationType.NONE,
+                null,
+                null
+        ));
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
+
+        viewModel.loadSchedule(13L);
+        viewModel.confirmRecurrenceScope(OccurrenceEditScope.THIS_AND_FUTURE);
+        viewModel.saveSchedule("Weekly sync", "Room B", "");
+
+        assertEquals(1, repository.updatedRecurringSchedules.size());
+        assertEquals(OccurrenceEditScope.THIS_AND_FUTURE, repository.updatedEditScopes.get(0));
+    }
+
+    @Test
+    public void confirmRecurrenceScope_clearsFurtherConfirmationRequirement() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        repository.savedSchedules.add(new Schedule(
+                15L,
+                "Weekly sync",
+                START_TIME,
+                END_TIME,
+                Schedule.PRIORITY_MEDIUM,
+                4,
+                "Room B",
+                ""
+        ));
+        repository.recurrenceDraftByScheduleId.add(15L, new RecurrenceDraft(
+                true,
+                102L,
+                RecurrenceFrequency.WEEKLY,
+                RecurrenceDraft.UNIT_WEEK,
+                1,
+                RecurrenceDurationType.NONE,
+                null,
+                null
+        ));
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
+
+        viewModel.loadSchedule(15L);
+        viewModel.confirmRecurrenceScope(OccurrenceEditScope.SINGLE);
+
+        assertFalse(Boolean.TRUE.equals(viewModel.getShouldConfirmRecurrenceScope().getValue()));
+        assertEquals(OccurrenceEditScope.SINGLE, viewModel.getOccurrenceEditScope().getValue());
     }
 
     private static class FakeScheduleRepository implements ScheduleRepository {

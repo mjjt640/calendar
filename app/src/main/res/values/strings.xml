@@ -135,4 +135,11 @@
         <item>@string/recurrence_config_duration_until_date</item>
         <item>@string/recurrence_config_duration_occurrence_count</item>
     </string-array>
+    <string name="add_schedule_recurrence_title">重复与持续时间</string>
+    <string name="add_schedule_recurrence_hint">开始和结束时间有效后，可以在这里继续配置重复规则与持续条件。</string>
+    <string name="add_schedule_recurrence_summary_label">当前摘要</string>
+    <string name="add_schedule_recurrence_action">去设置</string>
+    <string name="recurrence_scope_dialog_title">这次修改应用到哪里？</string>
+    <string name="recurrence_scope_single">仅这一次</string>
+    <string name="recurrence_scope_this_and_future">这一次及之后</string>
 </resources>

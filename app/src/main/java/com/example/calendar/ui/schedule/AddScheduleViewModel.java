@@ -49,6 +49,7 @@ public class AddScheduleViewModel extends ViewModel {
     private final MutableLiveData<String> recurrenceSummary =
             new MutableLiveData<>(RECURRENCE_SUMMARY_SINGLE);
     private final MutableLiveData<Boolean> isRecurringSchedule = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> shouldConfirmRecurrenceScope = new MutableLiveData<>(false);
     private final MutableLiveData<OccurrenceEditScope> occurrenceEditScope =
             new MutableLiveData<>(OccurrenceEditScope.SINGLE);
     private boolean editingRecurringSeries;
@@ -131,6 +132,10 @@ public class AddScheduleViewModel extends ViewModel {
         return isRecurringSchedule;
     }
 
+    public LiveData<Boolean> getShouldConfirmRecurrenceScope() {
+        return shouldConfirmRecurrenceScope;
+    }
+
     public LiveData<OccurrenceEditScope> getOccurrenceEditScope() {
         return occurrenceEditScope;
     }
@@ -160,6 +165,7 @@ public class AddScheduleViewModel extends ViewModel {
         endTimeText.setValue(formatTime(endTime));
         RecurrenceDraft loadedDraft = scheduleRepository.getRecurrenceDraft(id);
         editingRecurringSeries = loadedDraft != null && loadedDraft.isRecurring();
+        shouldConfirmRecurrenceScope.setValue(editingRecurringSeries);
         refreshRecurrenceState(loadedDraft);
         occurrenceEditScope.setValue(OccurrenceEditScope.SINGLE);
         pageTitle.setValue(PAGE_TITLE_EDIT);
@@ -186,6 +192,11 @@ public class AddScheduleViewModel extends ViewModel {
 
     public void applyRecurrenceDraft(RecurrenceDraft nextDraft) {
         refreshRecurrenceState(nextDraft);
+    }
+
+    public void confirmRecurrenceScope(OccurrenceEditScope nextScope) {
+        occurrenceEditScope.setValue(nextScope == null ? OccurrenceEditScope.SINGLE : nextScope);
+        shouldConfirmRecurrenceScope.setValue(false);
     }
 
     public void updateOccurrenceEditScope(OccurrenceEditScope nextScope) {

@@ -3,16 +3,20 @@ package com.example.calendar.ui.schedule;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,7 +25,10 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.calendar.R;
 import com.example.calendar.databinding.ActivityAddScheduleBinding;
+import com.example.calendar.domain.model.OccurrenceEditScope;
+import com.example.calendar.domain.model.RecurrenceDraft;
 import com.example.calendar.domain.model.Schedule;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.Calendar;
@@ -32,6 +39,11 @@ public class AddScheduleActivity extends AppCompatActivity {
     private ActivityAddScheduleBinding binding;
     private AddScheduleViewModel viewModel;
     private PriorityDropdownAdapter priorityAdapter;
+    private ActivityResultLauncher<Intent> recurrenceConfigLauncher;
+    private boolean hasAnimatedRecurrenceCard;
+    private String lastRecurrenceSummary;
+    @Nullable
+    private OccurrenceEditScope pendingRecurrenceScope;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +53,23 @@ public class AddScheduleActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this, new AddScheduleViewModelFactory(this))
                 .get(AddScheduleViewModel.class);
+        recurrenceConfigLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() != RESULT_OK) {
+                        pendingRecurrenceScope = null;
+                        return;
+                    }
+                    RecurrenceDraft resultDraft = RecurrenceConfigActivity.extractResultDraft(result.getData());
+                    if (resultDraft != null) {
+                        if (pendingRecurrenceScope != null) {
+                            viewModel.confirmRecurrenceScope(pendingRecurrenceScope);
+                        }
+                        viewModel.applyRecurrenceDraft(resultDraft);
+                    }
+                    pendingRecurrenceScope = null;
+                }
+        );
 
         String[] priorityItems = new String[]{
                 getString(R.string.schedule_priority_high),
@@ -65,6 +94,7 @@ public class AddScheduleActivity extends AppCompatActivity {
         binding.toolbar.setNavigationOnClickListener(v -> finish());
         binding.startTimeRow.setOnClickListener(v -> pickDateTime(true, viewModel.getStartTime()));
         binding.endTimeRow.setOnClickListener(v -> pickDateTime(false, viewModel.getEndTime()));
+        binding.recurrenceCard.setOnClickListener(v -> openRecurrenceConfigFlow());
         binding.saveButton.setOnClickListener(v -> viewModel.saveSchedule(
                 textOf(binding.titleInput.getText()),
                 textOf(binding.locationInput.getText()),
@@ -96,6 +126,8 @@ public class AddScheduleActivity extends AppCompatActivity {
             binding.priorityInput.setText(value, false);
             updatePriorityFieldAppearance(value);
         });
+        viewModel.getShowRecurrenceCard().observe(this, this::renderRecurrenceCardVisibility);
+        viewModel.getRecurrenceSummary().observe(this, this::renderRecurrenceSummary);
         viewModel.getTitleText().observe(this, value -> updateInputIfNeeded(binding.titleInput, value));
         viewModel.getLocationText().observe(this, value -> updateInputIfNeeded(binding.locationInput, value));
         viewModel.getNoteText().observe(this, value -> updateInputIfNeeded(binding.noteInput, value));
@@ -105,6 +137,93 @@ public class AddScheduleActivity extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+    private void openRecurrenceConfigFlow() {
+        if (!Boolean.TRUE.equals(viewModel.getShowRecurrenceCard().getValue())) {
+            return;
+        }
+        if (Boolean.TRUE.equals(viewModel.getShouldConfirmRecurrenceScope().getValue())) {
+            showOccurrenceScopeDialog();
+            return;
+        }
+        launchRecurrenceConfig(null);
+    }
+
+    private void showOccurrenceScopeDialog() {
+        String[] items = new String[]{
+                getString(R.string.recurrence_scope_single),
+                getString(R.string.recurrence_scope_this_and_future)
+        };
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.recurrence_scope_dialog_title)
+                .setItems(items, (dialog, which) -> {
+                    OccurrenceEditScope scope = which == 1
+                            ? OccurrenceEditScope.THIS_AND_FUTURE
+                            : OccurrenceEditScope.SINGLE;
+                    launchRecurrenceConfig(scope);
+                })
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .show();
+    }
+
+    private void launchRecurrenceConfig(@Nullable OccurrenceEditScope scope) {
+        pendingRecurrenceScope = scope;
+        recurrenceConfigLauncher.launch(RecurrenceConfigActivity.createIntent(
+                this,
+                viewModel.getRecurrenceDraft().getValue(),
+                viewModel.getStartTime(),
+                viewModel.getEndTime()
+        ));
+    }
+
+    private void renderRecurrenceCardVisibility(Boolean show) {
+        boolean shouldShow = Boolean.TRUE.equals(show);
+        if (!shouldShow) {
+            binding.recurrenceCard.animate().cancel();
+            binding.recurrenceCard.setVisibility(View.GONE);
+            binding.recurrenceCard.setAlpha(1f);
+            binding.recurrenceCard.setTranslationY(0f);
+            return;
+        }
+        if (binding.recurrenceCard.getVisibility() == View.VISIBLE) {
+            return;
+        }
+        binding.recurrenceCard.setVisibility(View.VISIBLE);
+        if (!hasAnimatedRecurrenceCard) {
+            hasAnimatedRecurrenceCard = true;
+            binding.recurrenceCard.setAlpha(0f);
+            binding.recurrenceCard.setTranslationY(dpToPx(14));
+            binding.recurrenceCard.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setDuration(260L)
+                    .setInterpolator(new AccelerateDecelerateInterpolator())
+                    .start();
+        } else {
+            binding.recurrenceCard.setAlpha(1f);
+            binding.recurrenceCard.setTranslationY(0f);
+        }
+    }
+
+    private void renderRecurrenceSummary(String summary) {
+        String safeSummary = summary == null ? "" : summary;
+        binding.recurrenceSummaryChip.setText(safeSummary);
+        binding.recurrenceSummaryValue.setText(safeSummary);
+        if (lastRecurrenceSummary != null && !lastRecurrenceSummary.equals(safeSummary)) {
+            binding.recurrenceSummaryChip.animate().cancel();
+            binding.recurrenceSummaryChip.setAlpha(0.78f);
+            binding.recurrenceSummaryChip.setScaleX(0.96f);
+            binding.recurrenceSummaryChip.setScaleY(0.96f);
+            binding.recurrenceSummaryChip.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(220L)
+                    .setInterpolator(new AccelerateDecelerateInterpolator())
+                    .start();
+        }
+        lastRecurrenceSummary = safeSummary;
     }
 
     private void pickDateTime(boolean isStartTime, long currentTimeMillis) {
