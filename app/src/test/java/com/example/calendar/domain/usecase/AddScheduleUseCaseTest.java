@@ -1,6 +1,8 @@
 package com.example.calendar.domain.usecase;
 
 import com.example.calendar.data.repository.ScheduleRepository;
+import com.example.calendar.domain.model.OccurrenceEditScope;
+import com.example.calendar.domain.model.RecurrenceDraft;
 import com.example.calendar.domain.model.Schedule;
 
 import org.junit.Test;
@@ -67,7 +69,23 @@ public class AddScheduleUseCaseTest {
         }
 
         @Override
+        public RecurrenceDraft getRecurrenceDraft(long scheduleId) {
+            return null;
+        }
+
+        @Override
         public void updateSchedule(Schedule schedule) {
+        }
+
+        @Override
+        public long addScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft) {
+            savedSchedules.add(schedule);
+            return savedSchedules.size();
+        }
+
+        @Override
+        public void updateScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft,
+                                                 OccurrenceEditScope editScope) {
         }
 
         @Override

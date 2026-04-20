@@ -28,6 +28,9 @@ public interface RecurrenceDao {
     @Query("SELECT * FROM recurrence_series ORDER BY scheduleId ASC, id ASC")
     List<RecurrenceSeriesEntity> getAllSeries();
 
+    @Query("DELETE FROM recurrence_series WHERE scheduleId = :scheduleId")
+    void deleteSeriesByScheduleId(long scheduleId);
+
     @Query("SELECT * FROM recurrence_exceptions WHERE seriesId = :seriesId AND occurrenceStartTime >= :windowStartInclusive AND occurrenceStartTime < :windowEndExclusive ORDER BY occurrenceStartTime ASC, id ASC")
     List<RecurrenceExceptionEntity> getExceptionsForWindow(long seriesId, long windowStartInclusive, long windowEndExclusive);
 

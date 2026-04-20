@@ -3,6 +3,8 @@ package com.example.calendar.ui.home;
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 
 import com.example.calendar.data.repository.ScheduleRepository;
+import com.example.calendar.domain.model.OccurrenceEditScope;
+import com.example.calendar.domain.model.RecurrenceDraft;
 import com.example.calendar.domain.model.Schedule;
 
 import org.junit.Rule;
@@ -183,7 +185,23 @@ public class HomeViewModelTest {
         }
 
         @Override
+        public RecurrenceDraft getRecurrenceDraft(long scheduleId) {
+            return null;
+        }
+
+        @Override
         public void updateSchedule(Schedule schedule) {
+        }
+
+        @Override
+        public long addScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft) {
+            schedules.add(schedule);
+            return schedule.getId();
+        }
+
+        @Override
+        public void updateScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft,
+                                                 OccurrenceEditScope editScope) {
         }
 
         @Override

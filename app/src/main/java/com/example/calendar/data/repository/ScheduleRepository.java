@@ -1,5 +1,7 @@
 package com.example.calendar.data.repository;
 
+import com.example.calendar.domain.model.OccurrenceEditScope;
+import com.example.calendar.domain.model.RecurrenceDraft;
 import com.example.calendar.domain.model.Schedule;
 
 import java.time.LocalDate;
@@ -8,6 +10,8 @@ import java.util.Set;
 
 public interface ScheduleRepository {
     long addSchedule(Schedule schedule);
+
+    long addScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft);
 
     List<Schedule> getOpenSchedules();
 
@@ -19,9 +23,14 @@ public interface ScheduleRepository {
 
     Schedule getScheduleById(long id);
 
+    RecurrenceDraft getRecurrenceDraft(long scheduleId);
+
     int getScheduleCount();
 
     void updateSchedule(Schedule schedule);
+
+    void updateScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft,
+                                      OccurrenceEditScope editScope);
 
     void deleteSchedule(long id);
 

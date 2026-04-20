@@ -5,6 +5,10 @@ import com.example.calendar.data.local.dao.ScheduleDao;
 import com.example.calendar.data.local.entity.RecurrenceExceptionEntity;
 import com.example.calendar.data.local.entity.RecurrenceSeriesEntity;
 import com.example.calendar.data.local.entity.ScheduleEntity;
+import com.example.calendar.domain.model.OccurrenceEditScope;
+import com.example.calendar.domain.model.RecurrenceDraft;
+import com.example.calendar.domain.model.RecurrenceDurationType;
+import com.example.calendar.domain.model.RecurrenceFrequency;
 import com.example.calendar.domain.model.Schedule;
 import com.example.calendar.domain.usecase.ResolveScheduleOccurrencesUseCase;
 
@@ -48,6 +52,19 @@ public class LocalScheduleRepository implements ScheduleRepository {
                 schedule.getNote()
         );
         return scheduleDao.insert(entity);
+    }
+
+    @Override
+    public long addScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft) {
+        if (recurrenceDraft != null && recurrenceDraft.isRecurring() && recurrenceDao == null) {
+            throw new IllegalStateException("Recurring schedule saves require recurrenceDao support.");
+        }
+        long scheduleId = addSchedule(schedule);
+        if (scheduleId == 0L || recurrenceDao == null || recurrenceDraft == null || !recurrenceDraft.isRecurring()) {
+            return scheduleId;
+        }
+        recurrenceDao.insertSeries(buildSeriesEntity(0L, scheduleId, schedule, recurrenceDraft));
+        return scheduleId;
     }
 
     @Override
@@ -96,6 +113,15 @@ public class LocalScheduleRepository implements ScheduleRepository {
     }
 
     @Override
+    public RecurrenceDraft getRecurrenceDraft(long scheduleId) {
+        if (recurrenceDao == null) {
+            return null;
+        }
+        RecurrenceSeriesEntity series = recurrenceDao.getSeriesByScheduleId(scheduleId);
+        return series == null ? null : mapRecurrenceDraft(series);
+    }
+
+    @Override
     public int getScheduleCount() {
         return scheduleDao.countAll();
     }
@@ -113,6 +139,31 @@ public class LocalScheduleRepository implements ScheduleRepository {
                 schedule.getLocation(),
                 schedule.getNote()
         ));
+    }
+
+    @Override
+    public void updateScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft,
+                                             OccurrenceEditScope editScope) {
+        if (editScope == OccurrenceEditScope.THIS_AND_FUTURE) {
+            throw new UnsupportedOperationException("OccurrenceEditScope.THIS_AND_FUTURE is not supported yet.");
+        }
+        if (recurrenceDao == null) {
+            throw new IllegalStateException("Recurring schedule updates require recurrenceDao support.");
+        }
+
+        RecurrenceSeriesEntity existingSeries = recurrenceDao.getSeriesByScheduleId(schedule.getId());
+        if (recurrenceDraft == null || !recurrenceDraft.isRecurring()) {
+            updateSchedule(schedule);
+            recurrenceDao.deleteSeriesByScheduleId(schedule.getId());
+            return;
+        }
+
+        if (existingSeries != null) {
+            throw new UnsupportedOperationException("编辑已有重复系列规则暂未支持。");
+        }
+
+        updateSchedule(schedule);
+        recurrenceDao.insertSeries(buildSeriesEntity(0L, schedule.getId(), schedule, recurrenceDraft));
     }
 
     @Override
@@ -217,6 +268,45 @@ public class LocalScheduleRepository implements ScheduleRepository {
 
     private String recurringKey(Long seriesId, Long occurrenceStartTime) {
         return String.valueOf(seriesId) + "#" + String.valueOf(occurrenceStartTime);
+    }
+
+    private RecurrenceSeriesEntity buildSeriesEntity(long seriesId, long scheduleId, Schedule schedule,
+                                                     RecurrenceDraft recurrenceDraft) {
+        RecurrenceFrequency frequency = recurrenceDraft.getFrequency() == null
+                ? RecurrenceFrequency.NONE
+                : recurrenceDraft.getFrequency();
+        String intervalUnit = recurrenceDraft.getIntervalUnit() == null
+                ? RecurrenceDraft.UNIT_DAY
+                : recurrenceDraft.getIntervalUnit();
+        int intervalValue = recurrenceDraft.getIntervalValue() > 0 ? recurrenceDraft.getIntervalValue() : 1;
+        RecurrenceDurationType durationType = recurrenceDraft.getDurationType() == null
+                ? RecurrenceDurationType.NONE
+                : recurrenceDraft.getDurationType();
+        return new RecurrenceSeriesEntity(
+                seriesId,
+                scheduleId,
+                frequency,
+                intervalUnit,
+                intervalValue,
+                schedule.getStartTime(),
+                schedule.getEndTime(),
+                durationType,
+                recurrenceDraft.getUntilTime(),
+                recurrenceDraft.getOccurrenceCount()
+        );
+    }
+
+    private RecurrenceDraft mapRecurrenceDraft(RecurrenceSeriesEntity series) {
+        return new RecurrenceDraft(
+                series.frequency != RecurrenceFrequency.NONE,
+                series.id,
+                series.frequency,
+                series.intervalUnit,
+                series.intervalValue,
+                series.durationType,
+                series.untilTime,
+                series.occurrenceCount
+        );
     }
 
     private List<Schedule> mapSchedules(List<ScheduleEntity> entities) {

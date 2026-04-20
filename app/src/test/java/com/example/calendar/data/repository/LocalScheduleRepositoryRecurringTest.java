@@ -5,6 +5,7 @@ import com.example.calendar.data.local.dao.ScheduleDao;
 import com.example.calendar.data.local.entity.RecurrenceExceptionEntity;
 import com.example.calendar.data.local.entity.RecurrenceSeriesEntity;
 import com.example.calendar.data.local.entity.ScheduleEntity;
+import com.example.calendar.domain.model.OccurrenceEditScope;
 import com.example.calendar.domain.model.RecurrenceDraft;
 import com.example.calendar.domain.model.RecurrenceDurationType;
 import com.example.calendar.domain.model.RecurrenceFrequency;
@@ -23,7 +24,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class LocalScheduleRepositoryRecurringTest {
 
@@ -593,6 +596,216 @@ public class LocalScheduleRepositoryRecurringTest {
         assertEquals(0, scheduleDao.updatedSortOrders.size());
     }
 
+    @Test
+    public void getRecurrenceDraft_withExistingSeries_returnsMappedDraft() {
+        FakeScheduleDao scheduleDao = new FakeScheduleDao();
+        FakeRecurrenceDao recurrenceDao = new FakeRecurrenceDao();
+        recurrenceDao.seriesByScheduleId.put(12L, new RecurrenceSeriesEntity(
+                110L,
+                12L,
+                RecurrenceFrequency.MONTHLY,
+                RecurrenceDraft.UNIT_MONTH,
+                2,
+                millisOf(2026, 4, 19, 9, 0),
+                millisOf(2026, 4, 19, 10, 0),
+                RecurrenceDurationType.OCCURRENCE_COUNT,
+                null,
+                5
+        ));
+        LocalScheduleRepository repository = new LocalScheduleRepository(scheduleDao, recurrenceDao);
+
+        RecurrenceDraft draft = repository.getRecurrenceDraft(12L);
+
+        assertTrue(draft.isRecurring());
+        assertEquals(Long.valueOf(110L), draft.getSeriesId());
+        assertEquals(RecurrenceFrequency.MONTHLY, draft.getFrequency());
+        assertEquals(Integer.valueOf(5), draft.getOccurrenceCount());
+    }
+
+    @Test
+    public void updateScheduleWithRecurrence_whenChangedToSingle_deletesExistingSeries() {
+        FakeScheduleDao scheduleDao = new FakeScheduleDao();
+        FakeRecurrenceDao recurrenceDao = new FakeRecurrenceDao();
+        recurrenceDao.seriesByScheduleId.put(13L, new RecurrenceSeriesEntity(
+                111L,
+                13L,
+                RecurrenceFrequency.WEEKLY,
+                RecurrenceDraft.UNIT_WEEK,
+                1,
+                millisOf(2026, 4, 19, 9, 0),
+                millisOf(2026, 4, 19, 10, 0),
+                RecurrenceDurationType.NONE,
+                null,
+                null
+        ));
+        recurrenceDao.exceptionsBySeriesId.put(111L, Arrays.asList(
+                new RecurrenceExceptionEntity(
+                        10L,
+                        111L,
+                        millisOf(2026, 4, 26, 9, 0),
+                        RecurrenceExceptionEntity.TYPE_DELETE,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                )
+        ));
+        LocalScheduleRepository repository = new LocalScheduleRepository(scheduleDao, recurrenceDao);
+
+        repository.updateScheduleWithRecurrence(
+                new Schedule(
+                        13L,
+                        "Weekly sync",
+                        millisOf(2026, 4, 19, 9, 0),
+                        millisOf(2026, 4, 19, 10, 0),
+                        Schedule.PRIORITY_MEDIUM,
+                        1,
+                        "",
+                        ""
+                ),
+                new RecurrenceDraft(
+                        false,
+                        111L,
+                        RecurrenceFrequency.NONE,
+                        RecurrenceDraft.UNIT_DAY,
+                        1,
+                        RecurrenceDurationType.NONE,
+                        null,
+                        null
+                ),
+                OccurrenceEditScope.SINGLE
+        );
+
+        assertEquals(Arrays.asList(13L), recurrenceDao.deletedSeriesByScheduleId);
+        assertNull(recurrenceDao.getSeriesByScheduleId(13L));
+        assertNull(repository.getRecurrenceDraft(13L));
+    }
+
+    @Test
+    public void updateScheduleWithRecurrence_withExistingSeriesAndRecurringDraft_singleScopeThrows() {
+        FakeScheduleDao scheduleDao = new FakeScheduleDao();
+        FakeRecurrenceDao recurrenceDao = new FakeRecurrenceDao();
+        recurrenceDao.seriesByScheduleId.put(14L, new RecurrenceSeriesEntity(
+                112L,
+                14L,
+                RecurrenceFrequency.WEEKLY,
+                RecurrenceDraft.UNIT_WEEK,
+                1,
+                millisOf(2026, 4, 19, 9, 0),
+                millisOf(2026, 4, 19, 10, 0),
+                RecurrenceDurationType.NONE,
+                null,
+                null
+        ));
+        LocalScheduleRepository repository = new LocalScheduleRepository(scheduleDao, recurrenceDao);
+
+        try {
+            repository.updateScheduleWithRecurrence(
+                    new Schedule(
+                            14L,
+                            "Series edit",
+                            millisOf(2026, 4, 19, 9, 0),
+                            millisOf(2026, 4, 19, 10, 0),
+                            Schedule.PRIORITY_MEDIUM,
+                            1,
+                            "",
+                            ""
+                    ),
+                    new RecurrenceDraft(
+                            true,
+                            112L,
+                            RecurrenceFrequency.MONTHLY,
+                            RecurrenceDraft.UNIT_MONTH,
+                            1,
+                            RecurrenceDurationType.NONE,
+                            null,
+                            null
+                    ),
+                    OccurrenceEditScope.SINGLE
+            );
+            fail("Expected UnsupportedOperationException");
+        } catch (UnsupportedOperationException expected) {
+            assertTrue(expected.getMessage().contains("编辑已有重复系列规则"));
+        }
+
+        assertEquals(0, scheduleDao.updatedIds.size());
+    }
+
+    @Test
+    public void updateScheduleWithRecurrence_withThisAndFuture_throwsUnsupportedOperationException() {
+        FakeScheduleDao scheduleDao = new FakeScheduleDao();
+        FakeRecurrenceDao recurrenceDao = new FakeRecurrenceDao();
+        LocalScheduleRepository repository = new LocalScheduleRepository(scheduleDao, recurrenceDao);
+
+        try {
+            repository.updateScheduleWithRecurrence(
+                    new Schedule(
+                            15L,
+                            "Series edit",
+                            millisOf(2026, 4, 19, 9, 0),
+                            millisOf(2026, 4, 19, 10, 0),
+                            Schedule.PRIORITY_MEDIUM,
+                            1,
+                            "",
+                            ""
+                    ),
+                    new RecurrenceDraft(
+                            true,
+                            113L,
+                            RecurrenceFrequency.WEEKLY,
+                            RecurrenceDraft.UNIT_WEEK,
+                            1,
+                            RecurrenceDurationType.NONE,
+                            null,
+                            null
+                    ),
+                    OccurrenceEditScope.THIS_AND_FUTURE
+            );
+            fail("Expected UnsupportedOperationException");
+        } catch (UnsupportedOperationException expected) {
+            assertTrue(expected.getMessage().contains("THIS_AND_FUTURE"));
+        }
+    }
+
+    @Test
+    public void updateScheduleWithRecurrence_withoutRecurrenceDao_failsBeforeUpdatingSchedule() {
+        FakeScheduleDao scheduleDao = new FakeScheduleDao();
+        LocalScheduleRepository repository = new LocalScheduleRepository(scheduleDao, null);
+
+        try {
+            repository.updateScheduleWithRecurrence(
+                    new Schedule(
+                            16L,
+                            "Unsupported recurring edit",
+                            millisOf(2026, 4, 19, 9, 0),
+                            millisOf(2026, 4, 19, 10, 0),
+                            Schedule.PRIORITY_MEDIUM,
+                            1,
+                            "",
+                            ""
+                    ),
+                    new RecurrenceDraft(
+                            true,
+                            null,
+                            RecurrenceFrequency.WEEKLY,
+                            RecurrenceDraft.UNIT_WEEK,
+                            1,
+                            RecurrenceDurationType.NONE,
+                            null,
+                            null
+                    ),
+                    OccurrenceEditScope.SINGLE
+            );
+            fail("Expected IllegalStateException");
+        } catch (IllegalStateException expected) {
+            assertTrue(expected.getMessage().contains("recurrenceDao"));
+        }
+
+        assertEquals(0, scheduleDao.updatedIds.size());
+    }
+
     private static long millisOf(int year, int month, int day, int hour, int minute) {
         return LocalDate.of(year, month, day)
                 .atTime(hour, minute)
@@ -689,6 +902,7 @@ public class LocalScheduleRepositoryRecurringTest {
     private static class FakeRecurrenceDao implements RecurrenceDao {
         private final Map<Long, RecurrenceSeriesEntity> seriesByScheduleId = new LinkedHashMap<>();
         private final Map<Long, List<RecurrenceExceptionEntity>> exceptionsBySeriesId = new LinkedHashMap<>();
+        private final List<Long> deletedSeriesByScheduleId = new ArrayList<>();
         private int windowExceptionQueryCount;
         private int overrideOverlapQueryCount;
 
@@ -718,6 +932,15 @@ public class LocalScheduleRepositoryRecurringTest {
         @Override
         public List<RecurrenceSeriesEntity> getAllSeries() {
             return new ArrayList<>(seriesByScheduleId.values());
+        }
+
+        @Override
+        public void deleteSeriesByScheduleId(long scheduleId) {
+            deletedSeriesByScheduleId.add(scheduleId);
+            RecurrenceSeriesEntity removed = seriesByScheduleId.remove(scheduleId);
+            if (removed != null) {
+                exceptionsBySeriesId.remove(removed.id);
+            }
         }
 
         @Override
