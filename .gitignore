@@ -38,3 +38,11 @@ google-services.json
 
 # Android profiling
 *.hprof
+
+# Local CLI auth/config
+.gh-config/
+.gh-login.out
+.gh-login.err
+.android-user-home/
+.codex/
+analytics.settings

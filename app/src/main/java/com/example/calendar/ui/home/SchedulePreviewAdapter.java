@@ -64,22 +64,6 @@ public class SchedulePreviewAdapter extends RecyclerView.Adapter<SchedulePreview
         return new ArrayList<>(items);
     }
 
-    public boolean hasRecurringItems() {
-        for (Schedule item : items) {
-            if (item.isRecurring()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean isRecurringAt(int position) {
-        if (position < 0 || position >= items.size()) {
-            return false;
-        }
-        return items.get(position).isRecurring();
-    }
-
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

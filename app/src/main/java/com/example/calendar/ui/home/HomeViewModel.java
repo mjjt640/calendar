@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.calendar.data.repository.ScheduleRepository;
+import com.example.calendar.domain.model.OccurrenceEditScope;
 import com.example.calendar.domain.model.Schedule;
 import com.example.calendar.ui.home.calendar.CalendarMonthBuilder;
 import com.example.calendar.ui.home.calendar.CalendarMonthState;
@@ -117,6 +118,25 @@ public class HomeViewModel extends ViewModel {
 
     public void deleteSchedule(long id) {
         scheduleRepository.deleteSchedule(id);
+        refreshCalendarState();
+    }
+
+    public void deleteSchedule(Schedule schedule, OccurrenceEditScope editScope) {
+        if (schedule == null) {
+            return;
+        }
+        if (schedule.isRecurring()) {
+            long occurrenceStartTime = schedule.getOccurrenceStartTime() == null
+                    ? schedule.getStartTime()
+                    : schedule.getOccurrenceStartTime();
+            scheduleRepository.deleteScheduleWithRecurrence(
+                    schedule.getId(),
+                    editScope == null ? OccurrenceEditScope.SINGLE : editScope,
+                    occurrenceStartTime
+            );
+        } else {
+            scheduleRepository.deleteSchedule(schedule.getId());
+        }
         refreshCalendarState();
     }
 

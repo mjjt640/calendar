@@ -1,18 +1,20 @@
 package com.example.calendar.ui.schedule;
 
-import android.app.DatePickerDialog;
-import android.app.Dialog;
-import android.app.TimePickerDialog;
+import android.Manifest;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -28,13 +30,26 @@ import com.example.calendar.databinding.ActivityAddScheduleBinding;
 import com.example.calendar.domain.model.OccurrenceEditScope;
 import com.example.calendar.domain.model.RecurrenceDraft;
 import com.example.calendar.domain.model.Schedule;
+import com.example.calendar.reminder.ReminderFormatter;
+import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.timepicker.MaterialTimePicker;
+import com.google.android.material.timepicker.TimeFormat;
 
-import java.util.Calendar;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 public class AddScheduleActivity extends AppCompatActivity {
     public static final String EXTRA_SCHEDULE_ID = "schedule_id";
+    public static final String EXTRA_OCCURRENCE_START_TIME = "occurrence_start_time";
+    public static final String EXTRA_DISPLAY_START_TIME = "display_start_time";
+    public static final String EXTRA_DISPLAY_END_TIME = "display_end_time";
+    private static final ZoneId APP_ZONE = ZoneId.of("Asia/Shanghai");
 
     private ActivityAddScheduleBinding binding;
     private AddScheduleViewModel viewModel;
@@ -44,6 +59,20 @@ public class AddScheduleActivity extends AppCompatActivity {
     private String lastRecurrenceSummary;
     @Nullable
     private OccurrenceEditScope pendingRecurrenceScope;
+    private int pendingSuccessMessageRes = R.string.schedule_saved;
+    private boolean pendingSaveAfterPermission;
+    private ActivityResultLauncher<String> notificationPermissionLauncher;
+
+    public static Intent createEditIntent(android.content.Context context, Schedule schedule) {
+        Intent intent = new Intent(context, AddScheduleActivity.class);
+        intent.putExtra(EXTRA_SCHEDULE_ID, schedule.getId());
+        if (schedule.isRecurring() && schedule.getOccurrenceStartTime() != null) {
+            intent.putExtra(EXTRA_OCCURRENCE_START_TIME, schedule.getOccurrenceStartTime());
+            intent.putExtra(EXTRA_DISPLAY_START_TIME, schedule.getStartTime());
+            intent.putExtra(EXTRA_DISPLAY_END_TIME, schedule.getEndTime());
+        }
+        return intent;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +82,23 @@ public class AddScheduleActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this, new AddScheduleViewModelFactory(this))
                 .get(AddScheduleViewModel.class);
+        notificationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    if (!pendingSaveAfterPermission) {
+                        return;
+                    }
+                    pendingSaveAfterPermission = false;
+                    if (!granted) {
+                        Snackbar.make(
+                                binding.getRoot(),
+                                R.string.notification_permission_hint,
+                                Snackbar.LENGTH_SHORT
+                        ).show();
+                    }
+                    performSave();
+                }
+        );
         recurrenceConfigLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -94,17 +140,33 @@ public class AddScheduleActivity extends AppCompatActivity {
         binding.toolbar.setNavigationOnClickListener(v -> finish());
         binding.startTimeRow.setOnClickListener(v -> pickDateTime(true, viewModel.getStartTime()));
         binding.endTimeRow.setOnClickListener(v -> pickDateTime(false, viewModel.getEndTime()));
+        binding.reminderRow.setOnClickListener(v -> showReminderOptionsDialog());
         binding.recurrenceCard.setOnClickListener(v -> openRecurrenceConfigFlow());
-        binding.saveButton.setOnClickListener(v -> viewModel.saveSchedule(
-                textOf(binding.titleInput.getText()),
-                textOf(binding.locationInput.getText()),
-                textOf(binding.noteInput.getText())
-        ));
-        binding.deleteButton.setOnClickListener(v -> viewModel.deleteSchedule());
+        binding.saveButton.setOnClickListener(v -> {
+            pendingSuccessMessageRes = R.string.schedule_saved;
+            maybeRequestNotificationPermissionThenSave();
+        });
+        binding.deleteButton.setOnClickListener(v -> {
+            if (Boolean.TRUE.equals(viewModel.getShouldConfirmDeleteScope().getValue())) {
+                showDeleteScopeDialog();
+            } else {
+                pendingSuccessMessageRes = R.string.schedule_deleted;
+                viewModel.deleteSchedule();
+            }
+        });
 
         long scheduleId = getIntent().getLongExtra(EXTRA_SCHEDULE_ID, 0L);
         if (scheduleId != 0L) {
-            viewModel.loadSchedule(scheduleId);
+            Long occurrenceStartTime = getIntent().hasExtra(EXTRA_OCCURRENCE_START_TIME)
+                    ? getIntent().getLongExtra(EXTRA_OCCURRENCE_START_TIME, 0L)
+                    : null;
+            Long displayStartTime = getIntent().hasExtra(EXTRA_DISPLAY_START_TIME)
+                    ? getIntent().getLongExtra(EXTRA_DISPLAY_START_TIME, 0L)
+                    : null;
+            Long displayEndTime = getIntent().hasExtra(EXTRA_DISPLAY_END_TIME)
+                    ? getIntent().getLongExtra(EXTRA_DISPLAY_END_TIME, 0L)
+                    : null;
+            viewModel.loadSchedule(scheduleId, occurrenceStartTime, displayStartTime, displayEndTime);
         }
 
         viewModel.getValidationMessage().observe(this, message -> {
@@ -128,15 +190,38 @@ public class AddScheduleActivity extends AppCompatActivity {
         });
         viewModel.getShowRecurrenceCard().observe(this, this::renderRecurrenceCardVisibility);
         viewModel.getRecurrenceSummary().observe(this, this::renderRecurrenceSummary);
+        viewModel.getReminderSummary().observe(this, binding.reminderSummaryValue::setText);
         viewModel.getTitleText().observe(this, value -> updateInputIfNeeded(binding.titleInput, value));
         viewModel.getLocationText().observe(this, value -> updateInputIfNeeded(binding.locationInput, value));
         viewModel.getNoteText().observe(this, value -> updateInputIfNeeded(binding.noteInput, value));
         viewModel.getSavedState().observe(this, saved -> {
             if (Boolean.TRUE.equals(saved)) {
-                Snackbar.make(binding.getRoot(), getString(R.string.schedule_saved), Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(binding.getRoot(), getString(pendingSuccessMessageRes), Snackbar.LENGTH_SHORT).show();
                 finish();
             }
         });
+    }
+
+    private void maybeRequestNotificationPermissionThenSave() {
+        Integer reminderMinutes = viewModel.getReminderMinutesBefore().getValue();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && reminderMinutes != null
+                && reminderMinutes > Schedule.REMINDER_NONE
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            pendingSaveAfterPermission = true;
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            return;
+        }
+        performSave();
+    }
+
+    private void performSave() {
+        viewModel.saveSchedule(
+                textOf(binding.titleInput.getText()),
+                textOf(binding.locationInput.getText()),
+                textOf(binding.noteInput.getText())
+        );
     }
 
     private void openRecurrenceConfigFlow() {
@@ -144,24 +229,45 @@ public class AddScheduleActivity extends AppCompatActivity {
             return;
         }
         if (Boolean.TRUE.equals(viewModel.getShouldConfirmRecurrenceScope().getValue())) {
-            showOccurrenceScopeDialog();
+            showEditScopeDialog();
             return;
         }
         launchRecurrenceConfig(null);
     }
 
-    private void showOccurrenceScopeDialog() {
+    private void showEditScopeDialog() {
         String[] items = new String[]{
-                getString(R.string.recurrence_scope_single),
-                getString(R.string.recurrence_scope_this_and_future)
+                getString(R.string.recurrence_edit_scope_single),
+                getString(R.string.recurrence_edit_scope_this_and_future),
+                getString(R.string.recurrence_edit_scope_entire_series)
         };
         new MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.recurrence_scope_dialog_title)
+                .setTitle(R.string.recurrence_edit_scope_dialog_title)
                 .setItems(items, (dialog, which) -> {
-                    OccurrenceEditScope scope = which == 1
-                            ? OccurrenceEditScope.THIS_AND_FUTURE
-                            : OccurrenceEditScope.SINGLE;
+                    OccurrenceEditScope scope = which == 2
+                            ? OccurrenceEditScope.ENTIRE_SERIES
+                            : (which == 1 ? OccurrenceEditScope.THIS_AND_FUTURE : OccurrenceEditScope.SINGLE);
                     launchRecurrenceConfig(scope);
+                })
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .show();
+    }
+
+    private void showDeleteScopeDialog() {
+        String[] items = new String[]{
+                getString(R.string.recurrence_delete_scope_single),
+                getString(R.string.recurrence_delete_scope_this_and_future),
+                getString(R.string.recurrence_delete_scope_entire_series)
+        };
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.recurrence_delete_scope_dialog_title)
+                .setItems(items, (dialog, which) -> {
+                    OccurrenceEditScope scope = which == 2
+                            ? OccurrenceEditScope.ENTIRE_SERIES
+                            : (which == 1 ? OccurrenceEditScope.THIS_AND_FUTURE : OccurrenceEditScope.SINGLE);
+                    pendingSuccessMessageRes = R.string.schedule_deleted;
+                    viewModel.confirmDeleteScope(scope);
+                    viewModel.deleteSchedule();
                 })
                 .setNegativeButton(R.string.dialog_cancel, null)
                 .show();
@@ -226,70 +332,189 @@ public class AddScheduleActivity extends AppCompatActivity {
         lastRecurrenceSummary = safeSummary;
     }
 
-    private void pickDateTime(boolean isStartTime, long currentTimeMillis) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(currentTimeMillis);
-
-        DatePickerDialog datePickerDialog = new DatePickerDialog(
-                this,
-                (view, year, month, dayOfMonth) -> {
-                    Calendar selected = Calendar.getInstance();
-                    selected.setTimeInMillis(currentTimeMillis);
-                    selected.set(Calendar.YEAR, year);
-                    selected.set(Calendar.MONTH, month);
-                    selected.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                    TimePickerDialog timePickerDialog = new TimePickerDialog(
-                            this,
-                            (timePicker, hourOfDay, minute) -> {
-                                selected.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                                selected.set(Calendar.MINUTE, minute);
-                                selected.set(Calendar.SECOND, 0);
-                                selected.set(Calendar.MILLISECOND, 0);
-                                if (isStartTime) {
-                                    viewModel.updateStartTime(selected.getTimeInMillis());
-                                } else {
-                                    viewModel.updateEndTime(selected.getTimeInMillis());
-                                }
-                            },
-                            selected.get(Calendar.HOUR_OF_DAY),
-                            selected.get(Calendar.MINUTE),
-                            true
-                    );
-                    localizeDialogButtons(timePickerDialog);
-                    timePickerDialog.show();
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-        );
-        localizeDialogButtons(datePickerDialog);
-        datePickerDialog.show();
+    private void showReminderOptionsDialog() {
+        String[] items = new String[]{
+                getString(R.string.add_schedule_reminder_none),
+                getString(R.string.add_schedule_reminder_five),
+                getString(R.string.add_schedule_reminder_fifteen),
+                getString(R.string.add_schedule_reminder_thirty),
+                getString(R.string.add_schedule_reminder_sixty),
+                getString(R.string.add_schedule_reminder_custom)
+        };
+        int checkedIndex = resolveReminderCheckedIndex();
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.add_schedule_reminder_title)
+                .setSingleChoiceItems(items, checkedIndex, (dialog, which) -> {
+                    if (which == items.length - 1) {
+                        dialog.dismiss();
+                        showCustomReminderDialog();
+                        return;
+                    }
+                    viewModel.updateReminderMinutesBefore(reminderMinutesForIndex(which));
+                    dialog.dismiss();
+                })
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .show();
     }
 
-    private void localizeDialogButtons(Dialog dialog) {
-        if (dialog instanceof DatePickerDialog) {
-            ((DatePickerDialog) dialog).setButton(
-                    DatePickerDialog.BUTTON_POSITIVE,
-                    getString(R.string.dialog_confirm),
-                    (DatePickerDialog) dialog
-            );
-            ((DatePickerDialog) dialog).setButton(
-                    DatePickerDialog.BUTTON_NEGATIVE,
-                    getString(R.string.dialog_cancel),
-                    (DatePickerDialog) dialog
-            );
-        } else if (dialog instanceof TimePickerDialog) {
-            ((TimePickerDialog) dialog).setButton(
-                    TimePickerDialog.BUTTON_POSITIVE,
-                    getString(R.string.dialog_confirm),
-                    (TimePickerDialog) dialog
-            );
-            ((TimePickerDialog) dialog).setButton(
-                    TimePickerDialog.BUTTON_NEGATIVE,
-                    getString(R.string.dialog_cancel),
-                    (TimePickerDialog) dialog
-            );
+    private void showCustomReminderDialog() {
+        EditText input = new EditText(this);
+        input.setHint(R.string.add_schedule_reminder_custom_hint);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setText(resolveCustomReminderText());
+        input.setSelection(input.getText().length());
+
+        LinearLayout container = new LinearLayout(this);
+        int padding = dpToPx(24);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(padding, dpToPx(12), padding, 0);
+        container.addView(input, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.add_schedule_reminder_custom_title)
+                .setView(container)
+                .setPositiveButton(R.string.dialog_confirm, (dialog, which) -> {
+                    Integer customMinutes = parseReminderMinutes(input.getText() == null
+                            ? ""
+                            : input.getText().toString());
+                    if (customMinutes == null) {
+                        Snackbar.make(
+                                binding.getRoot(),
+                                R.string.add_schedule_reminder_custom_error,
+                                Snackbar.LENGTH_SHORT
+                        ).show();
+                        return;
+                    }
+                    viewModel.updateReminderMinutesBefore(customMinutes);
+                })
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .show();
+    }
+
+    private int resolveReminderCheckedIndex() {
+        Integer reminderMinutes = viewModel.getReminderMinutesBefore().getValue();
+        int reminderValue = reminderMinutes == null ? Schedule.REMINDER_NONE : reminderMinutes;
+        if (reminderValue == 5) {
+            return 1;
         }
+        if (reminderValue == 15) {
+            return 2;
+        }
+        if (reminderValue == 30) {
+            return 3;
+        }
+        if (reminderValue == 60) {
+            return 4;
+        }
+        if (ReminderFormatter.isPreset(reminderValue)) {
+            return 0;
+        }
+        return 5;
+    }
+
+    private int reminderMinutesForIndex(int index) {
+        if (index == 1) {
+            return 5;
+        }
+        if (index == 2) {
+            return 15;
+        }
+        if (index == 3) {
+            return 30;
+        }
+        if (index == 4) {
+            return 60;
+        }
+        return Schedule.REMINDER_NONE;
+    }
+
+    @NonNull
+    private String resolveCustomReminderText() {
+        Integer reminderMinutes = viewModel.getReminderMinutesBefore().getValue();
+        if (reminderMinutes == null || reminderMinutes <= Schedule.REMINDER_NONE
+                || ReminderFormatter.isPreset(reminderMinutes)) {
+            return "";
+        }
+        return String.valueOf(reminderMinutes);
+    }
+
+    @Nullable
+    private Integer parseReminderMinutes(@NonNull String text) {
+        try {
+            int value = Integer.parseInt(text.trim());
+            if (value < 1 || value > 10080) {
+                return null;
+            }
+            return value;
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
+    private void pickDateTime(boolean isStartTime, long currentTimeMillis) {
+        LocalDate currentDate = Instant.ofEpochMilli(currentTimeMillis)
+                .atZone(APP_ZONE)
+                .toLocalDate();
+        LocalTime currentTime = Instant.ofEpochMilli(currentTimeMillis)
+                .atZone(APP_ZONE)
+                .toLocalTime()
+                .withSecond(0)
+                .withNano(0);
+
+        MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
+                .setTitleText(isStartTime ? R.string.add_schedule_start_label : R.string.add_schedule_end_label)
+                .setSelection(toPickerDateMillis(currentDate))
+                .build();
+        datePicker.addOnPositiveButtonClickListener(selection -> {
+            if (selection == null) {
+                return;
+            }
+            LocalDate selectedDate = Instant.ofEpochMilli(selection)
+                    .atZone(ZoneOffset.UTC)
+                    .toLocalDate();
+            showTimePicker(isStartTime, selectedDate, currentTime);
+        });
+        datePicker.show(
+                getSupportFragmentManager(),
+                isStartTime ? "schedule_start_date_picker" : "schedule_end_date_picker"
+        );
+    }
+
+    private void showTimePicker(boolean isStartTime, @NonNull LocalDate selectedDate,
+                                @NonNull LocalTime initialTime) {
+        MaterialTimePicker timePicker = new MaterialTimePicker.Builder()
+                .setTimeFormat(TimeFormat.CLOCK_24H)
+                .setHour(initialTime.getHour())
+                .setMinute(initialTime.getMinute())
+                .setTitleText(isStartTime ? R.string.add_schedule_start_label : R.string.add_schedule_end_label)
+                .build();
+        timePicker.addOnPositiveButtonClickListener(v -> {
+            LocalDateTime selectedDateTime = LocalDateTime.of(
+                    selectedDate,
+                    LocalTime.of(timePicker.getHour(), timePicker.getMinute())
+            );
+            long timeInMillis = selectedDateTime.atZone(APP_ZONE)
+                    .toInstant()
+                    .toEpochMilli();
+            if (isStartTime) {
+                viewModel.updateStartTime(timeInMillis);
+            } else {
+                viewModel.updateEndTime(timeInMillis);
+            }
+        });
+        timePicker.show(
+                getSupportFragmentManager(),
+                isStartTime ? "schedule_start_time_picker" : "schedule_end_time_picker"
+        );
+    }
+
+    private long toPickerDateMillis(@NonNull LocalDate date) {
+        return date.atStartOfDay(ZoneOffset.UTC)
+                .toInstant()
+                .toEpochMilli();
     }
 
     private void updateInputIfNeeded(com.google.android.material.textfield.TextInputEditText input, String value) {

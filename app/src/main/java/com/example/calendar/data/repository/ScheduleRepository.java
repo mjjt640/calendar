@@ -30,9 +30,25 @@ public interface ScheduleRepository {
     void updateSchedule(Schedule schedule);
 
     void updateScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft,
-                                      OccurrenceEditScope editScope);
+                                      OccurrenceEditScope editScope, long occurrenceStartTime);
+
+    default void updateScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft,
+                                              OccurrenceEditScope editScope) {
+        long resolvedOccurrenceStartTime = schedule.getOccurrenceStartTime() == null
+                ? schedule.getStartTime()
+                : schedule.getOccurrenceStartTime();
+        updateScheduleWithRecurrence(
+                schedule,
+                recurrenceDraft,
+                editScope,
+                resolvedOccurrenceStartTime
+        );
+    }
 
     void deleteSchedule(long id);
+
+    void deleteScheduleWithRecurrence(long scheduleId, OccurrenceEditScope editScope,
+                                      long occurrenceStartTime);
 
     void updateManualOrder(List<Schedule> schedules);
 }

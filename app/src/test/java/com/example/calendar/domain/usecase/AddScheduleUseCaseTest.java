@@ -85,11 +85,16 @@ public class AddScheduleUseCaseTest {
 
         @Override
         public void updateScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft,
-                                                 OccurrenceEditScope editScope) {
+                                                 OccurrenceEditScope editScope, long occurrenceStartTime) {
         }
 
         @Override
         public void deleteSchedule(long id) {
+        }
+
+        @Override
+        public void deleteScheduleWithRecurrence(long scheduleId, OccurrenceEditScope editScope,
+                                                 long occurrenceStartTime) {
         }
 
         @Override

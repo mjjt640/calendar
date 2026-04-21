@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.calendar.data.local.db.DatabaseProvider;
 import com.example.calendar.data.repository.LocalScheduleRepository;
+import com.example.calendar.reminder.WorkManagerScheduleReminderCoordinator;
 
 public class AddScheduleViewModelFactory implements ViewModelProvider.Factory {
     private final android.content.Context context;
@@ -21,7 +22,8 @@ public class AddScheduleViewModelFactory implements ViewModelProvider.Factory {
         com.example.calendar.data.local.db.AppDatabase database = DatabaseProvider.getInstance(context);
         LocalScheduleRepository repository = new LocalScheduleRepository(
                 database.scheduleDao(),
-                database.recurrenceDao()
+                database.recurrenceDao(),
+                new WorkManagerScheduleReminderCoordinator(context)
         );
         return (T) new AddScheduleViewModel(repository);
     }

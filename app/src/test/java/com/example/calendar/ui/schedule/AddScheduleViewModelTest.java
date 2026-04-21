@@ -222,6 +222,12 @@ public class AddScheduleViewModelTest {
         AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
 
         viewModel.loadSchedule(14L);
+
+        assertTrue(Boolean.TRUE.equals(viewModel.getIsRecurringSchedule().getValue()));
+        assertEquals(OccurrenceEditScope.SINGLE, viewModel.getOccurrenceEditScope().getValue());
+        assertTrue(Boolean.TRUE.equals(viewModel.getShouldConfirmRecurrenceScope().getValue()));
+        assertTrue(Boolean.TRUE.equals(viewModel.getShouldConfirmDeleteScope().getValue()));
+
         viewModel.applyRecurrenceDraft(new RecurrenceDraft(
                 false,
                 null,
@@ -371,6 +377,130 @@ public class AddScheduleViewModelTest {
 
         assertEquals(1, repository.updatedRecurringSchedules.size());
         assertEquals(OccurrenceEditScope.THIS_AND_FUTURE, repository.updatedEditScopes.get(0));
+        assertEquals(Long.valueOf(START_TIME), repository.updatedOccurrenceStartTimes.get(0));
+    }
+
+    @Test
+    public void saveSchedule_whenEntireSeriesScopeSelected_usesEntireSeriesScope() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        repository.savedSchedules.add(new Schedule(
+                16L,
+                "Weekly sync",
+                START_TIME,
+                END_TIME,
+                Schedule.PRIORITY_MEDIUM,
+                4,
+                "Room B",
+                ""
+        ));
+        repository.recurrenceDraftByScheduleId.add(16L, new RecurrenceDraft(
+                true,
+                103L,
+                RecurrenceFrequency.WEEKLY,
+                RecurrenceDraft.UNIT_WEEK,
+                1,
+                RecurrenceDurationType.NONE,
+                null,
+                null
+        ));
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
+
+        viewModel.loadSchedule(16L);
+        viewModel.confirmRecurrenceScope(OccurrenceEditScope.ENTIRE_SERIES);
+        viewModel.saveSchedule("Weekly sync", "Room B", "");
+
+        assertEquals(1, repository.updatedRecurringSchedules.size());
+        assertEquals(OccurrenceEditScope.ENTIRE_SERIES, repository.updatedEditScopes.get(0));
+    }
+
+    @Test
+    public void updateReminderMinutesBefore_refreshesReminderSummary() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
+
+        viewModel.updateReminderMinutesBefore(15);
+
+        assertEquals(Integer.valueOf(15), viewModel.getReminderMinutesBefore().getValue());
+        assertEquals("开始前 15 分钟", viewModel.getReminderSummary().getValue());
+    }
+
+    @Test
+    public void saveSchedule_withReminder_persistsReminderMinutes() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
+        viewModel.updateReminderMinutesBefore(30);
+
+        viewModel.saveSchedule("Team sync", "Room A", "Bring weekly report");
+
+        assertEquals(1, repository.savedSchedules.size());
+        assertEquals(30, repository.savedSchedules.get(0).getReminderMinutesBefore());
+    }
+
+    @Test
+    public void deleteSchedule_whenRecurringScopeConfirmed_usesRecurringDeleteBranch() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        repository.savedSchedules.add(new Schedule(
+                17L,
+                "Weekly sync",
+                START_TIME,
+                END_TIME,
+                Schedule.PRIORITY_MEDIUM,
+                4,
+                "Room B",
+                ""
+        ));
+        repository.recurrenceDraftByScheduleId.add(17L, new RecurrenceDraft(
+                true,
+                104L,
+                RecurrenceFrequency.WEEKLY,
+                RecurrenceDraft.UNIT_WEEK,
+                1,
+                RecurrenceDurationType.NONE,
+                null,
+                null
+        ));
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
+
+        viewModel.loadSchedule(17L);
+        viewModel.confirmDeleteScope(OccurrenceEditScope.THIS_AND_FUTURE);
+        viewModel.deleteSchedule();
+
+        assertTrue(Boolean.TRUE.equals(viewModel.getSavedState().getValue()));
+        assertEquals(1, repository.deletedScheduleIds.size());
+        assertEquals(Long.valueOf(17L), repository.deletedScheduleIds.get(0));
+        assertEquals(OccurrenceEditScope.THIS_AND_FUTURE, repository.deletedEditScopes.get(0));
+        assertEquals(Long.valueOf(START_TIME), repository.deletedOccurrenceStartTimes.get(0));
+    }
+
+    @Test
+    public void confirmDeleteScope_clearsFurtherDeleteConfirmationRequirement() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        repository.savedSchedules.add(new Schedule(
+                18L,
+                "Weekly sync",
+                START_TIME,
+                END_TIME,
+                Schedule.PRIORITY_MEDIUM,
+                4,
+                "Room B",
+                ""
+        ));
+        repository.recurrenceDraftByScheduleId.add(18L, new RecurrenceDraft(
+                true,
+                105L,
+                RecurrenceFrequency.WEEKLY,
+                RecurrenceDraft.UNIT_WEEK,
+                1,
+                RecurrenceDurationType.NONE,
+                null,
+                null
+        ));
+        AddScheduleViewModel viewModel = new AddScheduleViewModel(repository, START_TIME, END_TIME);
+
+        viewModel.loadSchedule(18L);
+        viewModel.confirmDeleteScope(OccurrenceEditScope.SINGLE);
+
+        assertFalse(Boolean.TRUE.equals(viewModel.getShouldConfirmDeleteScope().getValue()));
     }
 
     @Test
@@ -413,6 +543,10 @@ public class AddScheduleViewModelTest {
         private final List<Schedule> updatedRecurringSchedules = new ArrayList<>();
         private final List<RecurrenceDraft> updatedRecurringDrafts = new ArrayList<>();
         private final List<OccurrenceEditScope> updatedEditScopes = new ArrayList<>();
+        private final List<Long> updatedOccurrenceStartTimes = new ArrayList<>();
+        private final List<Long> deletedScheduleIds = new ArrayList<>();
+        private final List<OccurrenceEditScope> deletedEditScopes = new ArrayList<>();
+        private final List<Long> deletedOccurrenceStartTimes = new ArrayList<>();
         private final RecurrenceDraftByScheduleId recurrenceDraftByScheduleId = new RecurrenceDraftByScheduleId();
         private RuntimeException updateRecurringException;
 
@@ -476,17 +610,28 @@ public class AddScheduleViewModelTest {
 
         @Override
         public void updateScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft,
-                                                 OccurrenceEditScope editScope) {
+                                                 OccurrenceEditScope editScope,
+                                                 long occurrenceStartTime) {
             if (updateRecurringException != null) {
                 throw updateRecurringException;
             }
             updatedRecurringSchedules.add(schedule);
             updatedRecurringDrafts.add(recurrenceDraft);
             updatedEditScopes.add(editScope);
+            updatedOccurrenceStartTimes.add(occurrenceStartTime);
         }
 
         @Override
         public void deleteSchedule(long id) {
+            deletedScheduleIds.add(id);
+        }
+
+        @Override
+        public void deleteScheduleWithRecurrence(long scheduleId, OccurrenceEditScope editScope,
+                                                 long occurrenceStartTime) {
+            deletedScheduleIds.add(scheduleId);
+            deletedEditScopes.add(editScope);
+            deletedOccurrenceStartTimes.add(occurrenceStartTime);
         }
 
         @Override

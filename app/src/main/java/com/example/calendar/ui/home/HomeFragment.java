@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.calendar.R;
 import com.example.calendar.databinding.FragmentHomeBinding;
+import com.example.calendar.domain.model.OccurrenceEditScope;
 import com.example.calendar.domain.model.Schedule;
 import com.example.calendar.ui.schedule.AddScheduleActivity;
 import com.google.android.material.snackbar.Snackbar;
@@ -57,11 +58,6 @@ public class HomeFragment extends Fragment {
             @Override
             public void onStartDrag(RecyclerView.ViewHolder holder) {
                 if (sortingInProgress) {
-                    return;
-                }
-                int position = holder.getBindingAdapterPosition();
-                if (adapter.hasRecurringItems() || adapter.isRecurringAt(position)) {
-                    showRecurringSortPending();
                     return;
                 }
                 dragMoved = false;
@@ -142,10 +138,6 @@ public class HomeFragment extends Fragment {
         if (sortingInProgress) {
             return;
         }
-        if (adapter.hasRecurringItems()) {
-            showRecurringSortPending();
-            return;
-        }
         List<Schedule> targetItems = viewModel.getTimeSortedSchedules();
         if (targetItems.size() <= 1) {
             return;
@@ -219,35 +211,41 @@ public class HomeFragment extends Fragment {
     }
 
     private boolean handleMenuClick(MenuItem item, Schedule schedule) {
-        if (schedule.isRecurring()) {
-            showRecurringActionPending();
-            return true;
-        }
         if (item.getItemId() == 1) {
-            Intent intent = new Intent(requireContext(), AddScheduleActivity.class);
-            intent.putExtra(AddScheduleActivity.EXTRA_SCHEDULE_ID, schedule.getId());
-            startActivity(intent);
+            startActivity(AddScheduleActivity.createEditIntent(requireContext(), schedule));
             return true;
         }
         if (item.getItemId() == 2) {
-            viewModel.deleteSchedule(schedule.getId());
+            if (schedule.isRecurring()) {
+                showDeleteScopeDialog(schedule);
+            } else {
+                viewModel.deleteSchedule(schedule.getId());
+            }
             return true;
         }
         return false;
     }
 
-    private void showRecurringActionPending() {
+    private void showDeleteScopeDialog(Schedule schedule) {
         if (binding == null) {
             return;
         }
-        Snackbar.make(binding.getRoot(), R.string.home_recurring_action_pending, Snackbar.LENGTH_SHORT).show();
-    }
-
-    private void showRecurringSortPending() {
-        if (binding == null) {
-            return;
-        }
-        Snackbar.make(binding.getRoot(), R.string.home_recurring_sort_pending, Snackbar.LENGTH_SHORT).show();
+        String[] items = new String[]{
+                getString(R.string.recurrence_delete_scope_single),
+                getString(R.string.recurrence_delete_scope_this_and_future),
+                getString(R.string.recurrence_delete_scope_entire_series)
+        };
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.recurrence_delete_scope_dialog_title)
+                .setItems(items, (dialog, which) -> {
+                    OccurrenceEditScope scope = which == 2
+                            ? OccurrenceEditScope.ENTIRE_SERIES
+                            : (which == 1 ? OccurrenceEditScope.THIS_AND_FUTURE : OccurrenceEditScope.SINGLE);
+                    viewModel.deleteSchedule(schedule, scope);
+                    Snackbar.make(binding.getRoot(), R.string.schedule_deleted, Snackbar.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .show();
     }
 
     private final ItemTouchHelper.SimpleCallback itemTouchCallback =

@@ -30,6 +30,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:animateLayoutChanges="true"
             android:orientation="vertical"
             android:paddingHorizontal="@dimen/spacing_large"
             android:paddingBottom="@dimen/spacing_large">
@@ -77,21 +78,85 @@
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                         android:textColor="@color/text_secondary" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_large"
-                        android:text="@string/recurrence_config_summary_label"
-                        android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
-                        android:textColor="@color/calendar_hero" />
-
-                    <TextView
-                        android:id="@+id/summary_value"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                        android:textColor="@color/text_primary" />
+                        android:layout_marginTop="@dimen/spacing_large"
+                        android:background="@drawable/bg_recurrence_summary_panel"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/recurrence_config_summary_label"
+                            android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                            android:textColor="@color/calendar_hero" />
+
+                        <TextView
+                            android:id="@+id/summary_value"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                            android:textColor="@color/text_primary" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_add_schedule_stat"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/recurrence_config_frequency_title"
+                                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                                android:textColor="@color/calendar_hero" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="@string/recurrence_config_frequency_hint"
+                                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                                android:textColor="@color/text_primary" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/spacing_medium"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_add_schedule_stat"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/recurrence_config_duration_title"
+                                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                                android:textColor="@color/calendar_hero" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="@string/recurrence_config_duration_hint"
+                                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                                android:textColor="@color/text_primary" />
+                        </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -137,50 +202,84 @@
                             android:id="@+id/frequency_none_option"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:buttonTint="@color/calendar_hero"
-                            android:minHeight="48dp"
+                            android:background="@drawable/bg_recurrence_option"
+                            android:button="@null"
+                            android:drawableEnd="@drawable/ic_recurrence_option_indicator"
+                            android:drawablePadding="12dp"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:paddingHorizontal="18dp"
+                            android:paddingVertical="16dp"
                             android:text="@string/recurrence_config_frequency_single"
-                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
                             android:textColor="@color/text_primary" />
 
                         <RadioButton
                             android:id="@+id/frequency_daily_option"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:buttonTint="@color/calendar_hero"
-                            android:minHeight="48dp"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_recurrence_option"
+                            android:button="@null"
+                            android:drawableEnd="@drawable/ic_recurrence_option_indicator"
+                            android:drawablePadding="12dp"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:paddingHorizontal="18dp"
+                            android:paddingVertical="16dp"
                             android:text="@string/recurrence_config_frequency_daily"
-                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
                             android:textColor="@color/text_primary" />
 
                         <RadioButton
                             android:id="@+id/frequency_weekly_option"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:buttonTint="@color/calendar_hero"
-                            android:minHeight="48dp"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_recurrence_option"
+                            android:button="@null"
+                            android:drawableEnd="@drawable/ic_recurrence_option_indicator"
+                            android:drawablePadding="12dp"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:paddingHorizontal="18dp"
+                            android:paddingVertical="16dp"
                             android:text="@string/recurrence_config_frequency_weekly"
-                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
                             android:textColor="@color/text_primary" />
 
                         <RadioButton
                             android:id="@+id/frequency_monthly_option"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:buttonTint="@color/calendar_hero"
-                            android:minHeight="48dp"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_recurrence_option"
+                            android:button="@null"
+                            android:drawableEnd="@drawable/ic_recurrence_option_indicator"
+                            android:drawablePadding="12dp"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:paddingHorizontal="18dp"
+                            android:paddingVertical="16dp"
                             android:text="@string/recurrence_config_frequency_monthly"
-                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
                             android:textColor="@color/text_primary" />
 
                         <RadioButton
                             android:id="@+id/frequency_custom_option"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:buttonTint="@color/calendar_hero"
-                            android:minHeight="48dp"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_recurrence_option"
+                            android:button="@null"
+                            android:drawableEnd="@drawable/ic_recurrence_option_indicator"
+                            android:drawablePadding="12dp"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:paddingHorizontal="18dp"
+                            android:paddingVertical="16dp"
                             android:text="@string/recurrence_config_frequency_custom"
-                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
                             android:textColor="@color/text_primary" />
                     </RadioGroup>
                 </LinearLayout>
@@ -265,12 +364,15 @@
                                 android:layout_height="wrap_content"
                                 android:completionThreshold="2147483647"
                                 android:cursorVisible="false"
+                                android:dropDownHeight="wrap_content"
+                                android:dropDownVerticalOffset="10dp"
                                 android:focusable="false"
                                 android:focusableInTouchMode="false"
                                 android:inputType="none"
                                 android:longClickable="false"
                                 android:paddingTop="18dp"
                                 android:paddingBottom="18dp"
+                                android:popupBackground="@drawable/bg_priority_dropdown_popup"
                                 android:textIsSelectable="false"
                                 android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
                         </com.google.android.material.textfield.TextInputLayout>
@@ -329,12 +431,15 @@
                             android:layout_height="wrap_content"
                             android:completionThreshold="2147483647"
                             android:cursorVisible="false"
+                            android:dropDownHeight="wrap_content"
+                            android:dropDownVerticalOffset="10dp"
                             android:focusable="false"
                             android:focusableInTouchMode="false"
                             android:inputType="none"
                             android:longClickable="false"
                             android:paddingTop="18dp"
                             android:paddingBottom="18dp"
+                            android:popupBackground="@drawable/bg_priority_dropdown_popup"
                             android:textIsSelectable="false"
                             android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
                     </com.google.android.material.textfield.TextInputLayout>
@@ -345,6 +450,9 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:background="@drawable/bg_add_schedule_time_panel"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:padding="@dimen/spacing_large"

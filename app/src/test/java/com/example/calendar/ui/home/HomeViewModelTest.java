@@ -106,6 +106,75 @@ public class HomeViewModelTest {
         assertEquals("Review", viewModel.getSchedules().getValue().get(0).getTitle());
     }
 
+    @Test
+    public void persistManualOrder_withRecurringItems_keepsMixedOrder() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        HomeViewModel viewModel = new HomeViewModel(repository, fixedClock());
+        List<Schedule> reordered = Arrays.asList(
+                new Schedule(
+                        30L,
+                        "Weekly sync",
+                        millisOf(2026, 4, 18, 15, 0),
+                        millisOf(2026, 4, 18, 16, 0),
+                        Schedule.PRIORITY_MEDIUM,
+                        3,
+                        "Room B",
+                        "",
+                        true,
+                        930L,
+                        millisOf(2026, 4, 18, 15, 0)
+                ),
+                new Schedule(
+                        10L,
+                        "Review",
+                        millisOf(2026, 4, 18, 9, 0),
+                        millisOf(2026, 4, 18, 10, 0),
+                        Schedule.PRIORITY_MEDIUM,
+                        1
+                ),
+                new Schedule(
+                        20L,
+                        "Call",
+                        millisOf(2026, 4, 18, 11, 0),
+                        millisOf(2026, 4, 18, 12, 0),
+                        Schedule.PRIORITY_HIGH,
+                        2
+                )
+        );
+
+        viewModel.persistManualOrder(reordered);
+
+        assertEquals(Arrays.asList(30L, 10L, 20L), repository.updatedOrderIds);
+        assertEquals("Weekly sync", viewModel.getSchedules().getValue().get(0).getTitle());
+        assertTrue(viewModel.getSchedules().getValue().get(0).isRecurring());
+    }
+
+    @Test
+    public void deleteSchedule_withRecurringItem_usesRecurringDeleteApi() {
+        FakeScheduleRepository repository = new FakeScheduleRepository();
+        HomeViewModel viewModel = new HomeViewModel(repository, fixedClock());
+        Schedule recurring = new Schedule(
+                3L,
+                "Weekly sync",
+                millisOf(2026, 4, 18, 9, 0),
+                millisOf(2026, 4, 18, 10, 0),
+                Schedule.PRIORITY_MEDIUM,
+                1,
+                "",
+                "",
+                true,
+                300L,
+                millisOf(2026, 4, 18, 9, 0)
+        );
+        repository.schedules.add(recurring);
+
+        viewModel.deleteSchedule(recurring, OccurrenceEditScope.THIS_AND_FUTURE);
+
+        assertEquals(Arrays.asList(3L), repository.deletedRecurringIds);
+        assertEquals(Arrays.asList(OccurrenceEditScope.THIS_AND_FUTURE), repository.deletedRecurringScopes);
+        assertEquals(Arrays.asList(millisOf(2026, 4, 18, 9, 0)), repository.deletedRecurringOccurrenceStarts);
+    }
+
     private static Clock fixedClock() {
         return Clock.fixed(
                 Instant.parse("2026-04-18T02:00:00Z"),
@@ -124,6 +193,9 @@ public class HomeViewModelTest {
     private static class FakeScheduleRepository implements ScheduleRepository {
         private final List<Schedule> schedules = new ArrayList<>();
         private final List<Long> updatedOrderIds = new ArrayList<>();
+        private final List<Long> deletedRecurringIds = new ArrayList<>();
+        private final List<OccurrenceEditScope> deletedRecurringScopes = new ArrayList<>();
+        private final List<Long> deletedRecurringOccurrenceStarts = new ArrayList<>();
 
         @Override
         public long addSchedule(Schedule schedule) {
@@ -201,11 +273,19 @@ public class HomeViewModelTest {
 
         @Override
         public void updateScheduleWithRecurrence(Schedule schedule, RecurrenceDraft recurrenceDraft,
-                                                 OccurrenceEditScope editScope) {
+                                                 OccurrenceEditScope editScope, long occurrenceStartTime) {
         }
 
         @Override
         public void deleteSchedule(long id) {
+        }
+
+        @Override
+        public void deleteScheduleWithRecurrence(long scheduleId, OccurrenceEditScope editScope,
+                                                 long occurrenceStartTime) {
+            deletedRecurringIds.add(scheduleId);
+            deletedRecurringScopes.add(editScope);
+            deletedRecurringOccurrenceStarts.add(occurrenceStartTime);
         }
 
         @Override

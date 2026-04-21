@@ -21,7 +21,7 @@ import com.example.calendar.domain.model.RecurrenceFrequency;
                 RecurrenceSeriesEntity.class,
                 RecurrenceExceptionEntity.class
         },
-        version = 4,
+        version = 5,
         exportSchema = false
 )
 @TypeConverters(AppDatabase.Converters.class)
@@ -64,6 +64,15 @@ public abstract class AppDatabase extends RoomDatabase {
             database.execSQL(
                     "CREATE UNIQUE INDEX IF NOT EXISTS `index_recurrence_exceptions_seriesId_occurrenceStartTime` "
                             + "ON `recurrence_exceptions` (`seriesId`, `occurrenceStartTime`)"
+            );
+        }
+    };
+
+    public static final Migration MIGRATION_4_5 = new Migration(4, 5) {
+        @Override
+        public void migrate(@androidx.annotation.NonNull SupportSQLiteDatabase database) {
+            database.execSQL(
+                    "ALTER TABLE `schedules` ADD COLUMN `reminderMinutesBefore` INTEGER NOT NULL DEFAULT -1"
             );
         }
     };

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="add_schedule_section_reminder">提醒设置</string>
+    <string name="add_schedule_reminder_helper">支持保存为本地提醒，时间到了会在手机上弹出通知。</string>
+    <string name="add_schedule_reminder_label">提醒时间</string>
+    <string name="add_schedule_reminder_action">设置</string>
+    <string name="add_schedule_reminder_title">选择提醒时间</string>
+    <string name="add_schedule_reminder_none">不提醒</string>
+    <string name="add_schedule_reminder_five">提前 5 分钟</string>
+    <string name="add_schedule_reminder_fifteen">提前 15 分钟</string>
+    <string name="add_schedule_reminder_thirty">提前 30 分钟</string>
+    <string name="add_schedule_reminder_sixty">提前 1 小时</string>
+    <string name="add_schedule_reminder_custom">自定义</string>
+    <string name="add_schedule_reminder_custom_title">自定义提醒</string>
+    <string name="add_schedule_reminder_custom_hint">请输入开始前多少分钟提醒</string>
+    <string name="add_schedule_reminder_custom_error">请输入 1 到 10080 之间的分钟数</string>
+    <string name="notification_permission_hint">未开启通知权限，提醒可能不会显示</string>
+    <string name="schedule_reminder_channel_name">日程提醒</string>
+    <string name="schedule_reminder_channel_desc">用于推送即将开始的日程提醒</string>
+    <string name="schedule_notification_fallback_title">日程提醒</string>
+    <string name="schedule_notification_time_prefix">开始时间</string>
+</resources>

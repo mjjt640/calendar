@@ -122,7 +122,8 @@ public class ResolveScheduleOccurrencesUseCase {
                 anchor.note,
                 true,
                 seriesId,
-                occurrenceStart
+                occurrenceStart,
+                anchor.reminderMinutesBefore
         );
     }
 
@@ -183,7 +184,8 @@ public class ResolveScheduleOccurrencesUseCase {
                 exception.overrideNote != null ? exception.overrideNote : anchor.note,
                 true,
                 seriesId,
-                occurrenceStart
+                occurrenceStart,
+                anchor.reminderMinutesBefore
         );
     }
 

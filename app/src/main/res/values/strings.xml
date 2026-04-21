@@ -142,4 +142,13 @@
     <string name="recurrence_scope_dialog_title">这次修改应用到哪里？</string>
     <string name="recurrence_scope_single">仅这一次</string>
     <string name="recurrence_scope_this_and_future">这一次及之后</string>
+    <string name="recurrence_scope_entire_series">整个系列</string>
+    <string name="recurrence_edit_scope_dialog_title">修改这个重复日程</string>
+    <string name="recurrence_edit_scope_single">修改这一次</string>
+    <string name="recurrence_edit_scope_this_and_future">修改这一次及之后</string>
+    <string name="recurrence_edit_scope_entire_series">修改整个系列</string>
+    <string name="recurrence_delete_scope_dialog_title">删除这个重复日程</string>
+    <string name="recurrence_delete_scope_single">仅删除这一次</string>
+    <string name="recurrence_delete_scope_this_and_future">删除这一次及之后</string>
+    <string name="recurrence_delete_scope_entire_series">删除整个系列</string>
 </resources>

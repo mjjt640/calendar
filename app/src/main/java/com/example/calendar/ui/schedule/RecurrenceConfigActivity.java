@@ -1,6 +1,5 @@
 package com.example.calendar.ui.schedule;
 
-import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -11,10 +10,13 @@ import android.text.TextWatcher;
 import android.view.ActionMode;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.calendar.R;
@@ -22,11 +24,14 @@ import com.example.calendar.databinding.ActivityRecurrenceConfigBinding;
 import com.example.calendar.domain.model.RecurrenceDraft;
 import com.example.calendar.domain.model.RecurrenceDurationType;
 import com.example.calendar.domain.model.RecurrenceFrequency;
+import com.google.android.material.datepicker.CalendarConstraints;
+import com.google.android.material.datepicker.DateValidatorPointForward;
+import com.google.android.material.datepicker.MaterialDatePicker;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Calendar;
+import java.time.ZoneOffset;
 
 public class RecurrenceConfigActivity extends AppCompatActivity {
     public static final String EXTRA_INITIAL_DRAFT = "recurrence_config.initial_draft";
@@ -38,6 +43,8 @@ public class RecurrenceConfigActivity extends AppCompatActivity {
 
     private ActivityRecurrenceConfigBinding binding;
     private RecurrenceConfigViewModel viewModel;
+    private SelectionDropdownAdapter intervalUnitAdapter;
+    private SelectionDropdownAdapter durationAdapter;
 
     public static Intent createIntent(@NonNull Context context, @Nullable RecurrenceDraft initialDraft,
                                       long startTime, long endTime) {
@@ -99,21 +106,21 @@ public class RecurrenceConfigActivity extends AppCompatActivity {
     }
 
     private void setupCustomSection() {
-        ArrayAdapter<String> unitAdapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_list_item_1,
+        intervalUnitAdapter = new SelectionDropdownAdapter(
                 getResources().getStringArray(R.array.recurrence_config_unit_labels)
         );
         configureReadOnlyDropdown(binding.intervalUnitInput);
-        binding.intervalUnitInput.setAdapter(unitAdapter);
+        binding.intervalUnitInput.setAdapter(intervalUnitAdapter);
         binding.intervalUnitInput.setOnClickListener(v -> binding.intervalUnitInput.showDropDown());
         binding.intervalUnitInput.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
                 binding.intervalUnitInput.showDropDown();
             }
         });
-        binding.intervalUnitInput.setOnItemClickListener((parent, view, position, id) ->
-                viewModel.updateCustomIntervalUnit(unitForPosition(position)));
+        binding.intervalUnitInput.setOnItemClickListener((parent, view, position, id) -> {
+            intervalUnitAdapter.setSelectedPosition(position);
+            viewModel.updateCustomIntervalUnit(unitForPosition(position));
+        });
 
         binding.intervalInput.addTextChangedListener(new SimpleTextWatcher() {
             @Override
@@ -124,9 +131,7 @@ public class RecurrenceConfigActivity extends AppCompatActivity {
     }
 
     private void setupDurationSection() {
-        ArrayAdapter<String> durationAdapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_list_item_1,
+        durationAdapter = new SelectionDropdownAdapter(
                 getResources().getStringArray(R.array.recurrence_config_duration_labels)
         );
         configureReadOnlyDropdown(binding.durationTypeInput);
@@ -137,8 +142,10 @@ public class RecurrenceConfigActivity extends AppCompatActivity {
                 binding.durationTypeInput.showDropDown();
             }
         });
-        binding.durationTypeInput.setOnItemClickListener((parent, view, position, id) ->
-                viewModel.updateDurationType(durationForPosition(position)));
+        binding.durationTypeInput.setOnItemClickListener((parent, view, position, id) -> {
+            durationAdapter.setSelectedPosition(position);
+            viewModel.updateDurationType(durationForPosition(position));
+        });
 
         binding.untilDateRow.setOnClickListener(v -> showUntilDatePicker());
         binding.occurrenceCountInput.addTextChangedListener(new SimpleTextWatcher() {
@@ -166,10 +173,14 @@ public class RecurrenceConfigActivity extends AppCompatActivity {
         viewModel.getFrequency().observe(this, this::renderFrequencySelection);
         viewModel.getIntervalValue().observe(this,
                 value -> updateEditTextIfNeeded(binding.intervalInput, formatPositiveValue(value)));
-        viewModel.getCustomIntervalUnit().observe(this,
-                unit -> binding.intervalUnitInput.setText(labelForUnit(unit), false));
-        viewModel.getDurationType().observe(this,
-                durationType -> binding.durationTypeInput.setText(labelForDuration(durationType), false));
+        viewModel.getCustomIntervalUnit().observe(this, unit -> {
+            binding.intervalUnitInput.setText(labelForUnit(unit), false);
+            intervalUnitAdapter.setSelectedPosition(positionForUnit(unit));
+        });
+        viewModel.getDurationType().observe(this, durationType -> {
+            binding.durationTypeInput.setText(labelForDuration(durationType), false);
+            durationAdapter.setSelectedPosition(positionForDuration(durationType));
+        });
         viewModel.getUntilDateText().observe(this, binding.untilDateValue::setText);
         viewModel.getOccurrenceCount().observe(this,
                 value -> updateEditTextIfNeeded(binding.occurrenceCountInput, formatPositiveValue(value)));
@@ -235,37 +246,36 @@ public class RecurrenceConfigActivity extends AppCompatActivity {
     }
 
     private void showUntilDatePicker() {
-        Calendar calendar = Calendar.getInstance();
         Long untilTime = viewModel.getUntilTime().getValue();
-        calendar.setTimeInMillis(untilTime != null ? untilTime : viewModel.getStartTime());
-
-        DatePickerDialog dialog = new DatePickerDialog(
-                this,
-                (picker, year, month, dayOfMonth) -> {
-                    long selectedTime = LocalDate.of(year, month + 1, dayOfMonth)
-                            .atStartOfDay(APP_ZONE)
-                            .toInstant()
-                            .toEpochMilli();
-                    viewModel.updateUntilTime(selectedTime);
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-        );
-        dialog.setButton(
-                DatePickerDialog.BUTTON_POSITIVE,
-                getString(R.string.dialog_confirm),
-                dialog
-        );
-        dialog.setButton(
-                DatePickerDialog.BUTTON_NEGATIVE,
-                getString(R.string.dialog_cancel),
-                dialog
-        );
-        if (viewModel.getStartTime() > 0L) {
-            dialog.getDatePicker().setMinDate(atStartOfDay(viewModel.getStartTime()));
-        }
-        dialog.show();
+        LocalDate initialDate = Instant.ofEpochMilli(
+                        untilTime != null ? untilTime : viewModel.getStartTime())
+                .atZone(APP_ZONE)
+                .toLocalDate();
+        long minimumDate = toPickerDateMillis(Instant.ofEpochMilli(viewModel.getStartTime())
+                .atZone(APP_ZONE)
+                .toLocalDate());
+        MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker()
+                .setTitleText(R.string.recurrence_config_pick_date)
+                .setSelection(toPickerDateMillis(initialDate))
+                .setCalendarConstraints(new CalendarConstraints.Builder()
+                        .setStart(minimumDate)
+                        .setOpenAt(Math.max(minimumDate, toPickerDateMillis(initialDate)))
+                        .setValidator(DateValidatorPointForward.from(minimumDate))
+                        .build())
+                .build();
+        picker.addOnPositiveButtonClickListener(selection -> {
+            if (selection == null) {
+                return;
+            }
+            LocalDate selectedDate = Instant.ofEpochMilli(selection)
+                    .atZone(ZoneOffset.UTC)
+                    .toLocalDate();
+            long selectedTime = selectedDate.atStartOfDay(APP_ZONE)
+                    .toInstant()
+                    .toEpochMilli();
+            viewModel.updateUntilTime(selectedTime);
+        });
+        picker.show(getSupportFragmentManager(), "recurrence_until_date_picker");
     }
 
     private long atStartOfDay(long timeMillis) {
@@ -273,6 +283,12 @@ public class RecurrenceConfigActivity extends AppCompatActivity {
                 .atZone(APP_ZONE)
                 .toLocalDate()
                 .atStartOfDay(APP_ZONE)
+                .toInstant()
+                .toEpochMilli();
+    }
+
+    private long toPickerDateMillis(@NonNull LocalDate date) {
+        return date.atStartOfDay(ZoneOffset.UTC)
                 .toInstant()
                 .toEpochMilli();
     }
@@ -349,6 +365,26 @@ public class RecurrenceConfigActivity extends AppCompatActivity {
         return RecurrenceDurationType.NONE;
     }
 
+    private int positionForUnit(@Nullable String unit) {
+        if (RecurrenceDraft.UNIT_WEEK.equals(unit)) {
+            return 1;
+        }
+        if (RecurrenceDraft.UNIT_MONTH.equals(unit)) {
+            return 2;
+        }
+        return 0;
+    }
+
+    private int positionForDuration(@Nullable RecurrenceDurationType durationType) {
+        if (durationType == RecurrenceDurationType.UNTIL_DATE) {
+            return 1;
+        }
+        if (durationType == RecurrenceDurationType.OCCURRENCE_COUNT) {
+            return 2;
+        }
+        return 0;
+    }
+
     @Nullable
     @SuppressWarnings("deprecation")
     private static RecurrenceDraft getSerializableExtra(@NonNull Intent intent, @NonNull String key) {
@@ -398,6 +434,62 @@ public class RecurrenceConfigActivity extends AppCompatActivity {
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
+        }
+    }
+
+    private class SelectionDropdownAdapter extends ArrayAdapter<String> {
+        private int selectedPosition = -1;
+
+        SelectionDropdownAdapter(@NonNull String[] items) {
+            super(RecurrenceConfigActivity.this, R.layout.item_recurrence_dropdown, items);
+        }
+
+        void setSelectedPosition(int selectedPosition) {
+            this.selectedPosition = selectedPosition;
+            notifyDataSetChanged();
+        }
+
+        @NonNull
+        @Override
+        public View getView(int position, @Nullable View convertView, @NonNull android.view.ViewGroup parent) {
+            return createOrBindView(position, convertView, parent, false);
+        }
+
+        @NonNull
+        @Override
+        public View getDropDownView(int position, @Nullable View convertView,
+                                    @NonNull android.view.ViewGroup parent) {
+            return createOrBindView(position, convertView, parent, true);
+        }
+
+        private View createOrBindView(int position, @Nullable View convertView,
+                                      @NonNull android.view.ViewGroup parent, boolean dropdown) {
+            View view = convertView == null
+                    ? getLayoutInflater().inflate(R.layout.item_recurrence_dropdown, parent, false)
+                    : convertView;
+            TextView label = view.findViewById(R.id.dropdown_label);
+            ImageView check = view.findViewById(R.id.dropdown_check);
+            label.setText(getItem(position));
+
+            boolean isSelected = position == selectedPosition;
+            if (dropdown) {
+                view.setBackgroundResource(isSelected
+                        ? R.drawable.bg_priority_dropdown_item_selected
+                        : R.drawable.bg_priority_dropdown_item);
+                label.setTextColor(ContextCompat.getColor(
+                        RecurrenceConfigActivity.this,
+                        isSelected ? R.color.calendar_hero : R.color.text_primary
+                ));
+                check.setVisibility(isSelected ? View.VISIBLE : View.GONE);
+            } else {
+                view.setBackgroundResource(R.drawable.bg_priority_dropdown_item);
+                label.setTextColor(ContextCompat.getColor(
+                        RecurrenceConfigActivity.this,
+                        R.color.text_primary
+                ));
+                check.setVisibility(View.GONE);
+            }
+            return view;
         }
     }
 }

@@ -32,8 +32,11 @@ public class ScheduleEntity {
     @NonNull
     public String note;
 
+    public int reminderMinutesBefore;
+
     public ScheduleEntity(long id, @NonNull String title, long startTime, long endTime, @NonNull String priority,
-                          int sortOrder, boolean completed, @NonNull String location, @NonNull String note) {
+                          int sortOrder, boolean completed, @NonNull String location, @NonNull String note,
+                          int reminderMinutesBefore) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;
@@ -43,16 +46,34 @@ public class ScheduleEntity {
         this.completed = completed;
         this.location = location;
         this.note = note;
+        this.reminderMinutesBefore = reminderMinutesBefore;
+    }
+
+    @Ignore
+    public ScheduleEntity(long id, @NonNull String title, long startTime, long endTime, @NonNull String priority,
+                          int sortOrder, boolean completed, @NonNull String location, @NonNull String note) {
+        this(id, title, startTime, endTime, priority, sortOrder, completed, location, note, Schedule.REMINDER_NONE);
     }
 
     @Ignore
     public ScheduleEntity(long id, @NonNull String title, long startTime, long endTime, @NonNull String priority,
                           int sortOrder, boolean completed) {
-        this(id, title, startTime, endTime, priority, sortOrder, completed, "", "");
+        this(id, title, startTime, endTime, priority, sortOrder, completed, "", "", Schedule.REMINDER_NONE);
     }
 
     public static ScheduleEntity createDraft(@NonNull String title, long startTime, long endTime) {
-        return new ScheduleEntity(0L, title, startTime, endTime, Schedule.PRIORITY_MEDIUM, 0, false, "", "");
+        return new ScheduleEntity(
+                0L,
+                title,
+                startTime,
+                endTime,
+                Schedule.PRIORITY_MEDIUM,
+                0,
+                false,
+                "",
+                "",
+                Schedule.REMINDER_NONE
+        );
     }
 
     public static ScheduleEntity fromDomain(long id, @NonNull String title, long startTime, long endTime,
@@ -63,7 +84,36 @@ public class ScheduleEntity {
     public static ScheduleEntity fromDomain(long id, @NonNull String title, long startTime, long endTime,
                                             @NonNull String priority, int sortOrder, boolean completed,
                                             @NonNull String location, @NonNull String note) {
-        return new ScheduleEntity(id, title, startTime, endTime, priority, sortOrder, completed, location, note);
+        return new ScheduleEntity(
+                id,
+                title,
+                startTime,
+                endTime,
+                priority,
+                sortOrder,
+                completed,
+                location,
+                note,
+                Schedule.REMINDER_NONE
+        );
+    }
+
+    public static ScheduleEntity fromDomain(long id, @NonNull String title, long startTime, long endTime,
+                                            @NonNull String priority, int sortOrder, boolean completed,
+                                            @NonNull String location, @NonNull String note,
+                                            int reminderMinutesBefore) {
+        return new ScheduleEntity(
+                id,
+                title,
+                startTime,
+                endTime,
+                priority,
+                sortOrder,
+                completed,
+                location,
+                note,
+                reminderMinutesBefore
+        );
     }
 
     public static ScheduleEntity fromDomain(@NonNull Schedule schedule, boolean completed) {
@@ -76,7 +126,8 @@ public class ScheduleEntity {
                 schedule.getSortOrder(),
                 completed,
                 schedule.getLocation(),
-                schedule.getNote()
+                schedule.getNote(),
+                schedule.getReminderMinutesBefore()
         );
     }
 }

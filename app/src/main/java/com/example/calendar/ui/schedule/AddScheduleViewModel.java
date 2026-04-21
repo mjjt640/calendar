@@ -3,6 +3,7 @@ package com.example.calendar.ui.schedule;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+import androidx.annotation.Nullable;
 
 import com.example.calendar.data.repository.ScheduleRepository;
 import com.example.calendar.domain.model.OccurrenceEditScope;
@@ -10,6 +11,7 @@ import com.example.calendar.domain.model.RecurrenceDraft;
 import com.example.calendar.domain.model.RecurrenceDurationType;
 import com.example.calendar.domain.model.RecurrenceFrequency;
 import com.example.calendar.domain.model.Schedule;
+import com.example.calendar.reminder.ReminderFormatter;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -43,6 +45,10 @@ public class AddScheduleViewModel extends ViewModel {
     private final MutableLiveData<String> titleText = new MutableLiveData<>("");
     private final MutableLiveData<String> locationText = new MutableLiveData<>("");
     private final MutableLiveData<String> noteText = new MutableLiveData<>("");
+    private final MutableLiveData<Integer> reminderMinutesBefore =
+            new MutableLiveData<>(Schedule.REMINDER_NONE);
+    private final MutableLiveData<String> reminderSummary =
+            new MutableLiveData<>(ReminderFormatter.formatReminderSummary(Schedule.REMINDER_NONE));
     private final MutableLiveData<RecurrenceDraft> recurrenceDraft =
             new MutableLiveData<>(createOneTimeDraft());
     private final MutableLiveData<Boolean> showRecurrenceCard = new MutableLiveData<>(false);
@@ -50,12 +56,16 @@ public class AddScheduleViewModel extends ViewModel {
             new MutableLiveData<>(RECURRENCE_SUMMARY_SINGLE);
     private final MutableLiveData<Boolean> isRecurringSchedule = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> shouldConfirmRecurrenceScope = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> shouldConfirmDeleteScope = new MutableLiveData<>(false);
     private final MutableLiveData<OccurrenceEditScope> occurrenceEditScope =
+            new MutableLiveData<>(OccurrenceEditScope.SINGLE);
+    private final MutableLiveData<OccurrenceEditScope> deleteScope =
             new MutableLiveData<>(OccurrenceEditScope.SINGLE);
     private boolean editingRecurringSeries;
     private long scheduleId;
     private long startTime;
     private long endTime;
+    private long activeOccurrenceStartTime;
     private int sortOrder;
 
     public AddScheduleViewModel(ScheduleRepository scheduleRepository) {
@@ -116,6 +126,14 @@ public class AddScheduleViewModel extends ViewModel {
         return noteText;
     }
 
+    public LiveData<Integer> getReminderMinutesBefore() {
+        return reminderMinutesBefore;
+    }
+
+    public LiveData<String> getReminderSummary() {
+        return reminderSummary;
+    }
+
     public LiveData<RecurrenceDraft> getRecurrenceDraft() {
         return recurrenceDraft;
     }
@@ -136,6 +154,10 @@ public class AddScheduleViewModel extends ViewModel {
         return shouldConfirmRecurrenceScope;
     }
 
+    public LiveData<Boolean> getShouldConfirmDeleteScope() {
+        return shouldConfirmDeleteScope;
+    }
+
     public LiveData<OccurrenceEditScope> getOccurrenceEditScope() {
         return occurrenceEditScope;
     }
@@ -149,25 +171,41 @@ public class AddScheduleViewModel extends ViewModel {
     }
 
     public void loadSchedule(long id) {
+        loadSchedule(id, null, null, null);
+    }
+
+    public void loadSchedule(long id, @Nullable Long occurrenceStartTimeOverride,
+                             @Nullable Long displayStartTimeOverride,
+                             @Nullable Long displayEndTimeOverride) {
         Schedule schedule = scheduleRepository.getScheduleById(id);
         if (schedule == null) {
             return;
         }
         scheduleId = schedule.getId();
-        startTime = schedule.getStartTime();
-        endTime = schedule.getEndTime();
+        startTime = displayStartTimeOverride == null ? schedule.getStartTime() : displayStartTimeOverride;
+        endTime = displayEndTimeOverride == null ? schedule.getEndTime() : displayEndTimeOverride;
         sortOrder = schedule.getSortOrder();
+        if (occurrenceStartTimeOverride != null) {
+            activeOccurrenceStartTime = occurrenceStartTimeOverride;
+        } else {
+            activeOccurrenceStartTime = schedule.getOccurrenceStartTime() == null
+                    ? schedule.getStartTime()
+                    : schedule.getOccurrenceStartTime();
+        }
         titleText.setValue(schedule.getTitle());
         locationText.setValue(schedule.getLocation());
         noteText.setValue(schedule.getNote());
+        updateReminderMinutesBefore(schedule.getReminderMinutesBefore());
         priority.setValue(schedule.getPriority());
         startTimeText.setValue(formatTime(startTime));
         endTimeText.setValue(formatTime(endTime));
         RecurrenceDraft loadedDraft = scheduleRepository.getRecurrenceDraft(id);
         editingRecurringSeries = loadedDraft != null && loadedDraft.isRecurring();
         shouldConfirmRecurrenceScope.setValue(editingRecurringSeries);
+        shouldConfirmDeleteScope.setValue(editingRecurringSeries);
         refreshRecurrenceState(loadedDraft);
         occurrenceEditScope.setValue(OccurrenceEditScope.SINGLE);
+        deleteScope.setValue(OccurrenceEditScope.SINGLE);
         pageTitle.setValue(PAGE_TITLE_EDIT);
         saveButtonText.setValue(SAVE_BUTTON_EDIT);
         showDeleteAction.setValue(true);
@@ -190,6 +228,14 @@ public class AddScheduleViewModel extends ViewModel {
         priority.setValue(nextPriority);
     }
 
+    public void updateReminderMinutesBefore(int minutesBefore) {
+        int safeMinutesBefore = minutesBefore < Schedule.REMINDER_NONE
+                ? Schedule.REMINDER_NONE
+                : minutesBefore;
+        reminderMinutesBefore.setValue(safeMinutesBefore);
+        reminderSummary.setValue(ReminderFormatter.formatReminderSummary(safeMinutesBefore));
+    }
+
     public void applyRecurrenceDraft(RecurrenceDraft nextDraft) {
         refreshRecurrenceState(nextDraft);
     }
@@ -201,6 +247,11 @@ public class AddScheduleViewModel extends ViewModel {
 
     public void updateOccurrenceEditScope(OccurrenceEditScope nextScope) {
         occurrenceEditScope.setValue(nextScope == null ? OccurrenceEditScope.SINGLE : nextScope);
+    }
+
+    public void confirmDeleteScope(OccurrenceEditScope nextScope) {
+        deleteScope.setValue(nextScope == null ? OccurrenceEditScope.SINGLE : nextScope);
+        shouldConfirmDeleteScope.setValue(false);
     }
 
     public void saveSchedule(String title) {
@@ -234,7 +285,13 @@ public class AddScheduleViewModel extends ViewModel {
                 finalPriority,
                 scheduleId == 0L ? 0 : sortOrder,
                 trimmedLocation,
-                trimmedNote
+                trimmedNote,
+                false,
+                null,
+                null,
+                reminderMinutesBefore.getValue() == null
+                        ? Schedule.REMINDER_NONE
+                        : reminderMinutesBefore.getValue()
         );
         try {
             if (scheduleId == 0L) {
@@ -250,7 +307,8 @@ public class AddScheduleViewModel extends ViewModel {
                             currentRecurrenceDraft,
                             occurrenceEditScope.getValue() == null
                                     ? OccurrenceEditScope.SINGLE
-                                    : occurrenceEditScope.getValue()
+                                    : occurrenceEditScope.getValue(),
+                            activeOccurrenceStartTime == 0L ? startTime : activeOccurrenceStartTime
                     );
                 } else {
                     scheduleRepository.updateSchedule(scheduleToSave);
@@ -274,10 +332,19 @@ public class AddScheduleViewModel extends ViewModel {
     }
 
     public void deleteSchedule() {
-        if (scheduleId != 0L) {
-            scheduleRepository.deleteSchedule(scheduleId);
-            savedState.setValue(true);
+        if (scheduleId == 0L) {
+            return;
         }
+        if (editingRecurringSeries) {
+            scheduleRepository.deleteScheduleWithRecurrence(
+                    scheduleId,
+                    deleteScope.getValue() == null ? OccurrenceEditScope.SINGLE : deleteScope.getValue(),
+                    activeOccurrenceStartTime == 0L ? startTime : activeOccurrenceStartTime
+            );
+        } else {
+            scheduleRepository.deleteSchedule(scheduleId);
+        }
+        savedState.setValue(true);
     }
 
     private String sanitizeOptionalText(String value) {

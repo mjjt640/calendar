@@ -14,7 +14,7 @@ public final class DatabaseProvider {
     }
 
     static Migration[] getMigrations() {
-        return new Migration[]{AppDatabase.MIGRATION_3_4};
+        return new Migration[]{AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5};
     }
 
     public static AppDatabase getInstance(Context context) {
