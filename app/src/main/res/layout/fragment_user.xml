@@ -121,10 +121,14 @@
                     android:textColor="@color/text_primary" />
 
                 <TextView
+                    android:id="@+id/notification_settings_item"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/spacing_small"
                     android:background="@drawable/bg_time_panel"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     android:padding="@dimen/spacing_large"
                     android:text="@string/user_item_notifications"
                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"

@@ -6,4 +6,8 @@ public interface ScheduleReminderCoordinator {
     void syncScheduleReminderAfterOccurrence(long scheduleId, long occurrenceStartTime);
 
     void cancelScheduleReminder(long scheduleId);
+
+    void syncAllScheduleReminders();
+
+    void cancelAllScheduleReminders();
 }

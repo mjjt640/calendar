@@ -23,6 +23,15 @@ public final class AppConstants {
 
     public static final String DEFAULT_SIGNATURE = "暂未留下签名";
 
+    public static final String PREFS_REMINDER_SETTINGS = "calendar_reminder_settings";
+    public static final String KEY_REMINDERS_ENABLED = "reminders_enabled";
+    public static final String KEY_REMINDER_SOUND_ENABLED = "reminder_sound_enabled";
+    public static final String KEY_REMINDER_POPUP_ENABLED = "reminder_popup_enabled";
+    public static final String KEY_REMINDER_DND_ENABLED = "reminder_dnd_enabled";
+    public static final String KEY_REMINDER_DND_START_MINUTES = "reminder_dnd_start_minutes";
+    public static final String KEY_REMINDER_DND_END_MINUTES = "reminder_dnd_end_minutes";
+    public static final String KEY_REMINDER_HIGH_PRIORITY_BYPASS = "reminder_high_priority_bypass";
+
     private AppConstants() {
     }
 }

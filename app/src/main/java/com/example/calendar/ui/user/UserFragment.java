@@ -11,9 +11,11 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.calendar.common.constants.AppConstants;
 import com.example.calendar.databinding.FragmentUserBinding;
 import com.example.calendar.domain.model.UserProfile;
 import com.example.calendar.ui.auth.LoginActivity;
+import com.example.calendar.ui.settings.ReminderSettingsActivity;
 
 public class UserFragment extends Fragment {
     private FragmentUserBinding binding;
@@ -34,6 +36,9 @@ public class UserFragment extends Fragment {
                 .get(UserViewModel.class);
 
         binding.logoutButton.setOnClickListener(v -> viewModel.logout());
+        binding.notificationSettingsItem.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), ReminderSettingsActivity.class))
+        );
 
         viewModel.getProfileLiveData().observe(getViewLifecycleOwner(), this::bindProfile);
         viewModel.getLogoutState().observe(getViewLifecycleOwner(), logout -> {
@@ -67,7 +72,7 @@ public class UserFragment extends Fragment {
         }
         String nickname = emptyToFallback(profile.getNickname(), "用户");
         String account = emptyToFallback(profile.getAccount(), "未设置账号");
-        String signature = emptyToFallback(profile.getSignature(), "暂未留下签名");
+        String signature = emptyToFallback(profile.getSignature(), AppConstants.DEFAULT_SIGNATURE);
         binding.userName.setText(nickname);
         binding.userAccount.setText(account);
         binding.userSignature.setText(signature);

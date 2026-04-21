@@ -16,6 +16,9 @@ import com.example.calendar.data.local.db.DatabaseProvider;
 import com.example.calendar.data.local.entity.RecurrenceExceptionEntity;
 import com.example.calendar.data.local.entity.RecurrenceSeriesEntity;
 import com.example.calendar.data.local.entity.ScheduleEntity;
+import com.example.calendar.data.repository.LocalReminderSettingsRepository;
+import com.example.calendar.data.repository.ReminderSettingsRepository;
+import com.example.calendar.domain.model.ReminderSettings;
 import com.example.calendar.domain.model.Schedule;
 import com.example.calendar.domain.usecase.ResolveScheduleOccurrencesUseCase;
 
@@ -32,10 +35,12 @@ import java.util.concurrent.TimeUnit;
 public class WorkManagerScheduleReminderCoordinator implements ScheduleReminderCoordinator {
     private static final long SEARCH_WINDOW_DAYS = 45L;
     private static final int SEARCH_WINDOW_LIMIT = 12;
+    private static final String REMINDER_WORK_TAG = "schedule-reminder-work";
 
     private final Context context;
     private final ScheduleDao scheduleDao;
     private final RecurrenceDao recurrenceDao;
+    private final ReminderSettingsRepository reminderSettingsRepository;
     private final ResolveScheduleOccurrencesUseCase resolveScheduleOccurrencesUseCase;
 
     public WorkManagerScheduleReminderCoordinator(@NonNull Context context) {
@@ -43,12 +48,16 @@ public class WorkManagerScheduleReminderCoordinator implements ScheduleReminderC
         AppDatabase database = DatabaseProvider.getInstance(this.context);
         this.scheduleDao = database.scheduleDao();
         this.recurrenceDao = database.recurrenceDao();
+        this.reminderSettingsRepository = new LocalReminderSettingsRepository(this.context);
         this.resolveScheduleOccurrencesUseCase = new ResolveScheduleOccurrencesUseCase();
     }
 
     @Override
     public void syncScheduleReminder(long scheduleId) {
         cancelScheduleReminder(scheduleId);
+        if (!areRemindersEnabled()) {
+            return;
+        }
         ReminderCandidate candidate = findNextReminderCandidate(scheduleId, null);
         if (candidate == null) {
             return;
@@ -59,6 +68,9 @@ public class WorkManagerScheduleReminderCoordinator implements ScheduleReminderC
     @Override
     public void syncScheduleReminderAfterOccurrence(long scheduleId, long occurrenceStartTime) {
         cancelScheduleReminder(scheduleId);
+        if (!areRemindersEnabled()) {
+            return;
+        }
         ReminderCandidate candidate = findNextReminderCandidate(scheduleId, occurrenceStartTime);
         if (candidate == null) {
             return;
@@ -69,6 +81,23 @@ public class WorkManagerScheduleReminderCoordinator implements ScheduleReminderC
     @Override
     public void cancelScheduleReminder(long scheduleId) {
         WorkManager.getInstance(context).cancelUniqueWork(uniqueWorkName(scheduleId));
+    }
+
+    @Override
+    public void syncAllScheduleReminders() {
+        if (!areRemindersEnabled()) {
+            cancelAllScheduleReminders();
+            return;
+        }
+        List<ScheduleEntity> openSchedules = scheduleDao.getAllOpenSchedules();
+        for (ScheduleEntity entity : openSchedules) {
+            syncScheduleReminder(entity.id);
+        }
+    }
+
+    @Override
+    public void cancelAllScheduleReminders() {
+        WorkManager.getInstance(context).cancelAllWorkByTag(REMINDER_WORK_TAG);
     }
 
     @Nullable
@@ -188,6 +217,7 @@ public class WorkManagerScheduleReminderCoordinator implements ScheduleReminderC
                 schedule.getStartTime(),
                 schedule.getEndTime(),
                 schedule.getTitle(),
+                schedule.getPriority(),
                 schedule.getLocation(),
                 Math.max(0L, triggerAtMillis - now)
         );
@@ -200,12 +230,14 @@ public class WorkManagerScheduleReminderCoordinator implements ScheduleReminderC
                 .putLong(ScheduleReminderWorker.KEY_DISPLAY_START_TIME, candidate.displayStartTime)
                 .putLong(ScheduleReminderWorker.KEY_DISPLAY_END_TIME, candidate.displayEndTime)
                 .putString(ScheduleReminderWorker.KEY_TITLE, candidate.title)
+                .putString(ScheduleReminderWorker.KEY_PRIORITY, candidate.priority)
                 .putString(ScheduleReminderWorker.KEY_LOCATION, candidate.location)
                 .build();
         OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(ScheduleReminderWorker.class)
                 .setInitialDelay(candidate.delayMillis, TimeUnit.MILLISECONDS)
                 .setInputData(inputData)
                 .addTag(uniqueWorkName(candidate.scheduleId))
+                .addTag(REMINDER_WORK_TAG)
                 .build();
         WorkManager.getInstance(context).enqueueUniqueWork(
                 uniqueWorkName(candidate.scheduleId),
@@ -217,6 +249,11 @@ public class WorkManagerScheduleReminderCoordinator implements ScheduleReminderC
     @NonNull
     public static String uniqueWorkName(long scheduleId) {
         return "schedule-reminder-" + scheduleId;
+    }
+
+    private boolean areRemindersEnabled() {
+        ReminderSettings settings = reminderSettingsRepository.getSettings();
+        return settings.isRemindersEnabled();
     }
 
     private long resolveOriginalStartTime(@NonNull ScheduleEntity entity, @NonNull RecurrenceSeriesEntity series) {
@@ -247,17 +284,19 @@ public class WorkManagerScheduleReminderCoordinator implements ScheduleReminderC
         private final long displayStartTime;
         private final long displayEndTime;
         private final String title;
+        private final String priority;
         private final String location;
         private final long delayMillis;
 
         private ReminderCandidate(long scheduleId, long occurrenceStartTime, long displayStartTime,
-                                  long displayEndTime, @NonNull String title, @Nullable String location,
-                                  long delayMillis) {
+                                  long displayEndTime, @NonNull String title, @Nullable String priority,
+                                  @Nullable String location, long delayMillis) {
             this.scheduleId = scheduleId;
             this.occurrenceStartTime = occurrenceStartTime;
             this.displayStartTime = displayStartTime;
             this.displayEndTime = displayEndTime;
             this.title = title;
+            this.priority = priority == null ? "" : priority;
             this.location = location == null ? "" : location;
             this.delayMillis = delayMillis;
         }

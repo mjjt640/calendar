@@ -22,12 +22,40 @@ public class App extends Application {
         if (notificationManager == null) {
             return;
         }
-        NotificationChannel channel = new NotificationChannel(
-                ScheduleReminderWorker.CHANNEL_ID,
-                "日程提醒",
-                NotificationManager.IMPORTANCE_HIGH
-        );
-        channel.setDescription("用于推送即将开始的日程提醒");
-        notificationManager.createNotificationChannel(channel);
+        notificationManager.createNotificationChannel(createChannel(
+                ScheduleReminderWorker.CHANNEL_ID_POPUP_SOUND,
+                getString(R.string.schedule_reminder_channel_name_popup_sound),
+                NotificationManager.IMPORTANCE_HIGH,
+                false
+        ));
+        notificationManager.createNotificationChannel(createChannel(
+                ScheduleReminderWorker.CHANNEL_ID_POPUP_SILENT,
+                getString(R.string.schedule_reminder_channel_name_popup_silent),
+                NotificationManager.IMPORTANCE_HIGH,
+                true
+        ));
+        notificationManager.createNotificationChannel(createChannel(
+                ScheduleReminderWorker.CHANNEL_ID_NORMAL_SOUND,
+                getString(R.string.schedule_reminder_channel_name_normal_sound),
+                NotificationManager.IMPORTANCE_DEFAULT,
+                false
+        ));
+        notificationManager.createNotificationChannel(createChannel(
+                ScheduleReminderWorker.CHANNEL_ID_NORMAL_SILENT,
+                getString(R.string.schedule_reminder_channel_name_normal_silent),
+                NotificationManager.IMPORTANCE_DEFAULT,
+                true
+        ));
+    }
+
+    private NotificationChannel createChannel(String channelId, String channelName,
+                                              int importance, boolean silent) {
+        NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
+        channel.setDescription(getString(R.string.schedule_reminder_channel_desc));
+        if (silent) {
+            channel.setSound(null, null);
+            channel.enableVibration(false);
+        }
+        return channel;
     }
 }

@@ -16,19 +16,27 @@ import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import com.example.calendar.R;
+import com.example.calendar.data.repository.LocalReminderSettingsRepository;
+import com.example.calendar.domain.model.ReminderSettings;
+import com.example.calendar.domain.model.Schedule;
 import com.example.calendar.ui.schedule.AddScheduleActivity;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
 public class ScheduleReminderWorker extends Worker {
-    public static final String CHANNEL_ID = "calendar_schedule_reminder";
+    public static final String CHANNEL_ID_POPUP_SOUND = "calendar_schedule_reminder_popup_sound";
+    public static final String CHANNEL_ID_POPUP_SILENT = "calendar_schedule_reminder_popup_silent";
+    public static final String CHANNEL_ID_NORMAL_SOUND = "calendar_schedule_reminder_normal_sound";
+    public static final String CHANNEL_ID_NORMAL_SILENT = "calendar_schedule_reminder_normal_silent";
     public static final String KEY_SCHEDULE_ID = "schedule_id";
     public static final String KEY_OCCURRENCE_START_TIME = "occurrence_start_time";
     public static final String KEY_DISPLAY_START_TIME = "display_start_time";
     public static final String KEY_DISPLAY_END_TIME = "display_end_time";
     public static final String KEY_TITLE = "title";
+    public static final String KEY_PRIORITY = "priority";
     public static final String KEY_LOCATION = "location";
 
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.CHINA);
@@ -45,6 +53,7 @@ public class ScheduleReminderWorker extends Worker {
         long displayStartTime = getInputData().getLong(KEY_DISPLAY_START_TIME, 0L);
         long displayEndTime = getInputData().getLong(KEY_DISPLAY_END_TIME, 0L);
         String title = getInputData().getString(KEY_TITLE);
+        String priority = getInputData().getString(KEY_PRIORITY);
         String location = getInputData().getString(KEY_LOCATION);
 
         if (scheduleId == 0L || displayStartTime == 0L || displayEndTime == 0L) {
@@ -55,6 +64,17 @@ public class ScheduleReminderWorker extends Worker {
                     .syncScheduleReminderAfterOccurrence(scheduleId, occurrenceStartTime);
             return Result.success();
         }
+
+        ReminderSettings settings = new LocalReminderSettingsRepository(getApplicationContext()).getSettings();
+        if (!settings.isRemindersEnabled()) {
+            return Result.success();
+        }
+        if (settings.isReminderBlockedAt(currentMinutesOfDay(), Schedule.PRIORITY_HIGH.equals(priority))) {
+            new WorkManagerScheduleReminderCoordinator(getApplicationContext())
+                    .syncScheduleReminderAfterOccurrence(scheduleId, occurrenceStartTime);
+            return Result.success();
+        }
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
                 || ContextCompat.checkSelfPermission(
                 getApplicationContext(),
@@ -62,11 +82,16 @@ public class ScheduleReminderWorker extends Worker {
         ) == PackageManager.PERMISSION_GRANTED) {
             NotificationManagerCompat.from(getApplicationContext()).notify(
                     (int) scheduleId,
-                    new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
+                    new NotificationCompat.Builder(getApplicationContext(), resolveChannelId(settings))
                             .setSmallIcon(android.R.drawable.ic_dialog_info)
-                            .setContentTitle(TextUtils.isEmpty(title) ? "日程提醒" : title)
+                            .setContentTitle(TextUtils.isEmpty(title)
+                                    ? getApplicationContext().getString(R.string.schedule_notification_fallback_title)
+                                    : title)
                             .setContentText(buildContentText(displayStartTime, location))
-                            .setPriority(NotificationCompat.PRIORITY_HIGH)
+                            .setPriority(settings.isPopupEnabled()
+                                    ? NotificationCompat.PRIORITY_HIGH
+                                    : NotificationCompat.PRIORITY_DEFAULT)
+                            .setSilent(!settings.isSoundEnabled())
                             .setAutoCancel(true)
                             .setContentIntent(createContentIntent(
                                     scheduleId,
@@ -101,10 +126,32 @@ public class ScheduleReminderWorker extends Worker {
 
     @NonNull
     private String buildContentText(long displayStartTime, String location) {
-        String timeText = "开始时间 " + timeFormat.format(new Date(displayStartTime));
+        String timeText = getApplicationContext().getString(
+                R.string.schedule_notification_time_prefix,
+                timeFormat.format(new Date(displayStartTime))
+        );
         if (TextUtils.isEmpty(location)) {
             return timeText;
         }
         return timeText + " · " + location;
+    }
+
+    private int currentMinutesOfDay() {
+        Calendar calendar = Calendar.getInstance();
+        return calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE);
+    }
+
+    @NonNull
+    private String resolveChannelId(@NonNull ReminderSettings settings) {
+        if (settings.isPopupEnabled() && settings.isSoundEnabled()) {
+            return CHANNEL_ID_POPUP_SOUND;
+        }
+        if (settings.isPopupEnabled()) {
+            return CHANNEL_ID_POPUP_SILENT;
+        }
+        if (settings.isSoundEnabled()) {
+            return CHANNEL_ID_NORMAL_SOUND;
+        }
+        return CHANNEL_ID_NORMAL_SILENT;
     }
 }
