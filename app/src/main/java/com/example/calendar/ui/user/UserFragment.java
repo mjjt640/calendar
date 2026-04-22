@@ -15,6 +15,7 @@ import com.example.calendar.common.constants.AppConstants;
 import com.example.calendar.databinding.FragmentUserBinding;
 import com.example.calendar.domain.model.UserProfile;
 import com.example.calendar.ui.auth.LoginActivity;
+import com.example.calendar.ui.settings.DataManagementActivity;
 import com.example.calendar.ui.settings.ReminderSettingsActivity;
 
 public class UserFragment extends Fragment {
@@ -38,6 +39,9 @@ public class UserFragment extends Fragment {
         binding.logoutButton.setOnClickListener(v -> viewModel.logout());
         binding.notificationSettingsItem.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), ReminderSettingsActivity.class))
+        );
+        binding.dataManagementItem.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), DataManagementActivity.class))
         );
 
         viewModel.getProfileLiveData().observe(getViewLifecycleOwner(), this::bindProfile);

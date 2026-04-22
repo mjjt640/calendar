@@ -21,6 +21,9 @@ public interface ScheduleDao {
     @Delete
     void delete(ScheduleEntity scheduleEntity);
 
+    @Query("DELETE FROM schedules")
+    void deleteAll();
+
     @Query("SELECT * FROM schedules ORDER BY sortOrder ASC, startTime ASC")
     List<ScheduleEntity> getAll();
 

@@ -149,6 +149,11 @@ public class LocalScheduleRepositoryTest {
         }
 
         @Override
+        public void deleteAll() {
+            savedSchedules.clear();
+        }
+
+        @Override
         public List<ScheduleEntity> getAll() {
             return new ArrayList<>(savedSchedules);
         }

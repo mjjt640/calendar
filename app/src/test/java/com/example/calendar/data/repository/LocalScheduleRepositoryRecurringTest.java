@@ -1264,6 +1264,11 @@ public class LocalScheduleRepositoryRecurringTest {
         }
 
         @Override
+        public void deleteAll() {
+            savedSchedules.clear();
+        }
+
+        @Override
         public List<ScheduleEntity> getAll() {
             return new ArrayList<>(savedSchedules);
         }
@@ -1376,13 +1381,33 @@ public class LocalScheduleRepositoryRecurringTest {
         }
 
         @Override
+        public void deleteAllSeries() {
+            seriesByScheduleId.clear();
+            exceptionsBySeriesId.clear();
+        }
+
+        @Override
         public List<RecurrenceExceptionEntity> getExceptionsForSeries(long seriesId) {
             return new ArrayList<>(exceptionsBySeriesId.getOrDefault(seriesId, new ArrayList<>()));
         }
 
         @Override
+        public List<RecurrenceExceptionEntity> getAllExceptions() {
+            List<RecurrenceExceptionEntity> result = new ArrayList<>();
+            for (List<RecurrenceExceptionEntity> exceptions : exceptionsBySeriesId.values()) {
+                result.addAll(exceptions);
+            }
+            return result;
+        }
+
+        @Override
         public void deleteExceptionsBySeriesId(long seriesId) {
             exceptionsBySeriesId.remove(seriesId);
+        }
+
+        @Override
+        public void deleteAllExceptions() {
+            exceptionsBySeriesId.clear();
         }
 
         @Override

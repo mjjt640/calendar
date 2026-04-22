@@ -31,11 +31,20 @@ public interface RecurrenceDao {
     @Query("DELETE FROM recurrence_series WHERE scheduleId = :scheduleId")
     void deleteSeriesByScheduleId(long scheduleId);
 
+    @Query("DELETE FROM recurrence_series")
+    void deleteAllSeries();
+
     @Query("SELECT * FROM recurrence_exceptions WHERE seriesId = :seriesId ORDER BY occurrenceStartTime ASC, id ASC")
     List<RecurrenceExceptionEntity> getExceptionsForSeries(long seriesId);
 
+    @Query("SELECT * FROM recurrence_exceptions ORDER BY seriesId ASC, occurrenceStartTime ASC, id ASC")
+    List<RecurrenceExceptionEntity> getAllExceptions();
+
     @Query("DELETE FROM recurrence_exceptions WHERE seriesId = :seriesId")
     void deleteExceptionsBySeriesId(long seriesId);
+
+    @Query("DELETE FROM recurrence_exceptions")
+    void deleteAllExceptions();
 
     @Query("SELECT * FROM recurrence_exceptions WHERE seriesId = :seriesId AND occurrenceStartTime >= :windowStartInclusive AND occurrenceStartTime < :windowEndExclusive ORDER BY occurrenceStartTime ASC, id ASC")
     List<RecurrenceExceptionEntity> getExceptionsForWindow(long seriesId, long windowStartInclusive, long windowEndExclusive);

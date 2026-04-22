@@ -30,6 +30,11 @@
             android:theme="@style/Theme.Calendar" />
 
         <activity
+            android:name=".ui.settings.DataManagementActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Calendar" />
+
+        <activity
             android:name=".ui.profile.ProfileSetupActivity"
             android:exported="false"
             android:theme="@style/Theme.Calendar" />
